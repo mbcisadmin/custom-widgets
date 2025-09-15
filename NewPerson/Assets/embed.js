@@ -1,6 +1,6 @@
 (function () {
   // 🧩 CONFIGURATION
-  const baseUrl = "new-person-widget.vercel.app/Assets"; // <- Change this per widget project
+  const baseUrl = "https://mbcisadmin.github.io/custom-widgets/NewPerson/Assets"; // <- Change this per widget project
   const widgetName = "newPerson"; // <- Must match div IDs and container names
   const initScriptFilename = "Widget.Init.js"; // <- Shared Init script, or unique if needed
   const stylesheets = [
