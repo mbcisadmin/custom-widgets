@@ -233,9 +233,6 @@
   .new-person-cards {
     grid-template-columns: 1fr;
   }
-  .person-card {
-    width: 100%;
-  }
 }
 
 @media (max-width: 480px) {
