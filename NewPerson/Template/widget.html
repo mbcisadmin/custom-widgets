@@ -1,0 +1,136 @@
+<div class="date-picker-container">
+  <label for="datePicker">Choose a Date:</label>
+  <input type="date" id="datePicker" />
+</div>
+
+<div class="event-picker-container">
+  <label for="eventPicker">Choose an Event:</label>
+  <select id="eventPicker">
+    <option value="">All Events</option>
+    {% for event in DataSet1 %}
+      <option value="{{ event.Event_ID }}">{{ event.Event_Title }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+{% assign currentEventID = "" %}
+{% if DataSet2.size > 0 %}
+  {% for person in DataSet2 %}
+    {% if person.Event_ID != currentEventID %}
+      {% if forloop.index != 1 %}
+          </div> <!-- .new-person-cards -->
+        </section>
+      {% endif %}
+
+      {% assign currentEventID = person.Event_ID %}
+
+      <section class="event-section" id="event-{{ person.Event_ID }}">
+        <header class="event-section__header">
+          <h2 class="event-section__title">{{ person.Event_Title }}</h2>
+          <h3 class="event-section__meta">
+            {{ person.Event_Start_Date | date: "%A, %B %e, %Y - %I:%M%p" }}
+          </h3>
+        </header>
+
+        <div class="new-person-cards">
+    {% endif %}
+
+    <article class="person-card">
+
+      <div class="name">
+        {%- comment -%} Badge with FA icon based on New_Type {%- endcomment -%}
+        {% assign badge_text = person.New_Type_Label %}
+        {% if badge_text == blank %}
+          {% if person.New_Type == 1 %}
+            {% assign badge_text = "New Person" %}
+          {% elsif person.New_Type == 2 %}
+            {% assign badge_text = "New Again" %}
+          {% endif %}
+        {% endif %}
+        <h2>{{ person.Display_Name }}</h2>
+       <span class="badge badge--type{{ person.New_Type }}"
+      data-type="{{ person.New_Type }}"
+      role="note"
+      aria-label="{{ badge_text }}">
+          {% if person.New_Type == 1 %}
+            <i class="fas fa-user-plus" aria-hidden="true"></i>
+          {% elsif person.New_Type == 2 %}
+              <i class="fas fa-redo" aria-hidden="true"></i>
+          {% elsif person.New_Type == 3 %}
+              <i class="fas fa-plus" aria-hidden="true"></i>
+          {% endif %}
+          {{ badge_text }}
+        </span>
+      </div>
+
+      <div class="group">
+        <h6>Group</h6>
+        {{ person.Group_Name }}
+        {% assign iso = person.Participant_Start_Date %}
+        {% assign ymd = iso | split: 'T' | first %}
+        {% assign yyyy = ymd | slice: 0, 4 %}
+        {% assign mm   = ymd | slice: 5, 2 | plus: 0 %}
+        {% assign dd   = ymd | slice: 8, 2 | plus: 0 %}
+
+        <p>Participant Since: {{ mm }}/{{ dd }}/{{ yyyy }}</p>
+      </div>
+
+      {% if person.Last_Event %}
+      <div class="last-event">
+        <h6>Last Event</h6>
+        <p>{{ person.Last_Event }}</p>
+      </div>
+      {% endif %}
+
+      {% if person.Last_Congregation_Event %}
+      <div class="last-location-event">
+        <h6>Last Location Event</h6>
+        <p>{{ person.Last_Congregation_Event }}</p>
+      </div>
+      {% endif %}
+
+      {% if person.Head_1 or person.Head_2 %}
+      <div class="household">
+        <h6>Heads of Household</h6>
+        <ul>
+          {% if person.Head_1 %}
+          <li class="household-contact">
+            <p>{{ person.Head_1 }}</p>
+            <div class="icons">
+              {% if person.Head_1_Email %}
+              <a href="mailto:{{ person.Head_1_Email }}"><i class="fas fa-envelope"></i></a>
+              {% endif %}
+              {% if person.Head_1_Mobile %}
+              <a href="tel:{{ person.Head_1_Mobile }}"><i class="fas fa-phone"></i></a>
+              {% endif %}
+            </div>
+          </li>
+          {% endif %}
+
+          {% if person.Head_2 %}
+          <li class="household-contact">
+            <p>{{ person.Head_2 }}</p>
+            <div class="icons">
+              {% if person.Head_2_Email %}
+              <a href="mailto:{{ person.Head_2_Email }}"><i class="fas fa-envelope"></i></a>
+              {% endif %}
+              {% if person.Head_2_Mobile %}
+              <a href="tel:{{ person.Head_2_Mobile }}"><i class="fas fa-phone"></i></a>
+              {% endif %}
+            </div>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
+    </article>
+  {% endfor %}
+
+    </div> <!-- .new-person-cards (final group) -->
+  </section>
+{% else %}
+  <div class="empty-state">
+    <h3>🔒 Data not found or user not authorized.</h3>
+    <p>Please ensure you're logged in with the correct role and parameters are set correctly.</p>
+  </div>
+{% endif %}

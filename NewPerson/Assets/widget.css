@@ -1,0 +1,256 @@
+/* =========================================================
+   Theme tokens
+   ========================================================= */
+:root {
+  --primaryColor: #1c2b39;
+  --secondaryColor: #00a0e3;
+  --tertiaryColor: #e3b400;
+
+  --blue: #00a0e3; /* type 1 default */
+  --blue-text-safe: #0078aa;
+
+  --comp: #e34300;
+  --comp-text-safe: #d84000;
+  --comp-muted: #b74d20;
+  --comp-soft: #e0a085;
+
+  --split-violet: #7f19ba; /* type 2 */
+  --split-amber: #ea9c2e; /* type 3 */
+
+  --neutral-ink: #1c2b39;
+  --neutral-bg: #f5f7fa;
+}
+
+/* =========================================================
+   Base / Typography
+   ========================================================= */
+* {
+  font-family: "gotham", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-transform: uppercase;
+}
+h4 {
+  margin-bottom: 0.25em;
+}
+
+/* =========================================================
+   Layout containers
+   ========================================================= */
+#NewPersonWidget section {
+  margin-top: 4em;
+}
+
+.new-person-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1em;
+  margin-top: 1em;
+  align-items: stretch;
+}
+
+/* =========================================================
+   Person cards
+   ========================================================= */
+.person-card {
+  background: #edeef1;
+  padding: 1em;
+  box-shadow: 1px 1px 2px rgba(74, 74, 75, 0.17);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: start;
+}
+
+.person-card * {
+  margin: 0;
+}
+.person-card > div {
+  width: 100%;
+}
+
+.person-card h6 {
+  color: var(--secondaryColor);
+}
+
+.person-card .name {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.25em;
+}
+
+.person-card .name > h2,
+.person-card .name > h3 {
+  margin: 0;
+}
+
+.person-card h3 {
+  font-size: 1.1em;
+}
+.person-card p {
+  margin: 0;
+}
+
+/* =========================================================
+   Badge (driven by --badge-color)
+   ========================================================= */
+/* Map types to a color variable */
+#NewPersonWidget .badge--type1 {
+  --badge-color: var(--split-amber);
+} /* New Person */
+#NewPersonWidget .badge--type2 {
+  --badge-color: var(--split-violet);
+} /* New Again */
+#NewPersonWidget .badge--type3 {
+  --badge-color: var(--blue);
+} /* New to Program or 3rd state */
+
+/* Base badge styles; keep this after the type classes */
+.person-card .badge {
+  --badge-color: var(--secondaryColor);
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  position: relative;
+  font-size: 1rem;
+  font-weight: 900;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: var(--badge-color);
+  padding: 0.25em 0.75em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--badge-color) 12%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--badge-color) 35%, transparent);
+  animation: badge-pop 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    badge-breathe 6s ease-in-out 1s infinite;
+  width: min-content;
+}
+
+/* Icon inside badge uses currentColor */
+.person-card .badge i {
+  margin-right: 0.4em;
+  vertical-align: -0.12em;
+  color: currentColor;
+  opacity: 0.9;
+}
+
+/* Motion keyframes (no underline version) */
+@keyframes badge-pop {
+  0% {
+    transform: translateY(-2px) scale(0.98);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes badge-breathe {
+  0%,
+  100% {
+    text-shadow: none;
+  }
+  50% {
+    text-shadow: 0 0 0.35rem
+      color-mix(in srgb, var(--badge-color) 45%, transparent);
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .person-card .badge {
+    animation: none !important;
+  }
+}
+
+/* =========================================================
+   Household contacts / icons
+   ========================================================= */
+.icons {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5em;
+  font-size: 1.25rem;
+}
+
+.icons i {
+  margin-right: 0.4em;
+  color: var(--secondaryColor);
+}
+
+.household-contact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5em;
+  width: 100%;
+}
+
+.household .household-contact + .household-contact {
+  border-top: 1px solid
+    color-mix(in srgb, var(--secondaryColor) 15%, transparent);
+}
+
+.household ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* =========================================================
+   Empty state and date picker
+   ========================================================= */
+.empty-state {
+  background: #fff4f4;
+  border: 1px solid #ffcccc;
+  padding: 1em;
+  border-radius: 4px;
+  margin: 1em 0;
+  text-align: center;
+}
+
+.date-picker-container {
+  margin-bottom: 1em;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.date-picker-container input[type="date"] {
+  padding: 0.4em;
+  font-size: 1em;
+}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+@media (max-width: 768px) {
+  .new-person-cards {
+    grid-template-columns: 1fr;
+  }
+  .person-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .person-card {
+    padding: 0.75em;
+  }
+  .person-card h3 {
+    font-size: 1em;
+  }
+  .person-card .badge {
+    font-size: 0.75em;
+    padding: 0.2em 0.6em;
+  }
+}
