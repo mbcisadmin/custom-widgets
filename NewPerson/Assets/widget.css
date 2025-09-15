@@ -24,10 +24,6 @@
 /* =========================================================
    Base / Typography
    ========================================================= */
-#NewPersonWidget * {
-  font-family: "gotham", sans-serif;
-}
-
 #NewPersonWidget h1,
 #NewPersonWidget h2,
 #NewPersonWidget h3,
