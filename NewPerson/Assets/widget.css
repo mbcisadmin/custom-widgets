@@ -24,19 +24,19 @@
 /* =========================================================
    Base / Typography
    ========================================================= */
-* {
+#NewPersonWidget * {
   font-family: "gotham", sans-serif;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+#NewPersonWidget h1,
+#NewPersonWidget h2,
+#NewPersonWidget h3,
+#NewPersonWidget h4,
+#NewPersonWidget h5,
+#NewPersonWidget h6 {
   text-transform: uppercase;
 }
-h4 {
+#NewPersonWidget h4 {
   margin-bottom: 0.25em;
 }
 
