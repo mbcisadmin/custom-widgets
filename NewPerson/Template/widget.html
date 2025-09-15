@@ -25,12 +25,12 @@
       {% assign currentEventID = person.Event_ID %}
 
       <section class="event-section" id="event-{{ person.Event_ID }}">
-        <header class="event-section__header">
+        <div class="event-section__header">
           <h2 class="event-section__title">{{ person.Event_Title }}</h2>
           <h3 class="event-section__meta">
             {{ person.Event_Start_Date | date: "%A, %B %e, %Y - %I:%M%p" }}
           </h3>
-        </header>
+        </div>
 
         <div class="new-person-cards">
     {% endif %}
