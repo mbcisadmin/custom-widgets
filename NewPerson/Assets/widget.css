@@ -247,6 +247,9 @@
   .new-person-cards {
     grid-template-columns: 1fr;
   }
+  .picker-container > * {
+     width: 100%;
+   }
 }
 
 @media (max-width: 480px) {
