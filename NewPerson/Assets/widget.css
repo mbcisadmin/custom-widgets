@@ -9,6 +9,7 @@
   --badgeColor1: #ea9c2e;
   --badgeColor2: #7f19ba;
   --badgeColor3: #19ba32;
+  --badgeColor4: #19ba32;
 
   --blue: #00a0e3; /* type 1 default */
   --blue-text-safe: #0078aa;
@@ -148,6 +149,9 @@
 #NewPersonWidget .badge--type3 {
   --badge-color: var(--badgeColor3);
 } /* New to Program or 3rd state */
+#NewPersonWidget .badge--type4 {
+  --badge-color: var(--badgeColor4);
+} /* New to Program or 4th state */
 
 /* Base badge styles; keep this after the type classes */
 .person-card .badge {
