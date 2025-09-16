@@ -37,7 +37,7 @@
 
     <article class="person-card">
 
-      <div class="name">
+      <div class="name card-header">
         {%- comment -%} Badge with FA icon based on New_Type {%- endcomment -%}
         {% assign badge_text = person.New_Type_Label %}
         {% if badge_text == blank %}
@@ -62,67 +62,68 @@
           {{ badge_text }}
         </span>
       </div>
-
-      <div class="group">
-        <h6>Group</h6>
-        {{ person.Group_Name }}
-        {% assign iso = person.Participant_Start_Date %}
-        {% assign ymd = iso | split: 'T' | first %}
-        {% assign yyyy = ymd | slice: 0, 4 %}
-        {% assign mm   = ymd | slice: 5, 2 | plus: 0 %}
-        {% assign dd   = ymd | slice: 8, 2 | plus: 0 %}
-
-        <p>Participant Since: {{ mm }}/{{ dd }}/{{ yyyy }}</p>
+      <div class="card-content">
+        <div class="group">
+          <h6>Group</h6>
+          {{ person.Group_Name }}
+          {% assign iso = person.Participant_Start_Date %}
+          {% assign ymd = iso | split: 'T' | first %}
+          {% assign yyyy = ymd | slice: 0, 4 %}
+          {% assign mm   = ymd | slice: 5, 2 | plus: 0 %}
+          {% assign dd   = ymd | slice: 8, 2 | plus: 0 %}
+  
+          <p>Participant Since: {{ mm }}/{{ dd }}/{{ yyyy }}</p>
+        </div>
+  
+        {% if person.Last_Event %}
+        <div class="last-event">
+          <h6>Last Event</h6>
+          <p>{{ person.Last_Event }}</p>
+        </div>
+        {% endif %}
+  
+        {% if person.Last_Congregation_Event %}
+        <div class="last-location-event">
+          <h6>Last Location Event</h6>
+          <p>{{ person.Last_Congregation_Event }}</p>
+        </div>
+        {% endif %}
+  
+        {% if person.Head_1 or person.Head_2 %}
+        <div class="household">
+          <h6>Heads of Household</h6>
+          <ul>
+            {% if person.Head_1 %}
+            <li class="household-contact">
+              <p>{{ person.Head_1 }}</p>
+              <div class="icons">
+                {% if person.Head_1_Email %}
+                <a href="mailto:{{ person.Head_1_Email }}"><i class="fas fa-envelope"></i></a>
+                {% endif %}
+                {% if person.Head_1_Mobile %}
+                <a href="tel:{{ person.Head_1_Mobile }}"><i class="fas fa-phone"></i></a>
+                {% endif %}
+              </div>
+            </li>
+            {% endif %}
+  
+            {% if person.Head_2 %}
+            <li class="household-contact">
+              <p>{{ person.Head_2 }}</p>
+              <div class="icons">
+                {% if person.Head_2_Email %}
+                <a href="mailto:{{ person.Head_2_Email }}"><i class="fas fa-envelope"></i></a>
+                {% endif %}
+                {% if person.Head_2_Mobile %}
+                <a href="tel:{{ person.Head_2_Mobile }}"><i class="fas fa-phone"></i></a>
+                {% endif %}
+              </div>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+        {% endif %}
       </div>
-
-      {% if person.Last_Event %}
-      <div class="last-event">
-        <h6>Last Event</h6>
-        <p>{{ person.Last_Event }}</p>
-      </div>
-      {% endif %}
-
-      {% if person.Last_Congregation_Event %}
-      <div class="last-location-event">
-        <h6>Last Location Event</h6>
-        <p>{{ person.Last_Congregation_Event }}</p>
-      </div>
-      {% endif %}
-
-      {% if person.Head_1 or person.Head_2 %}
-      <div class="household">
-        <h6>Heads of Household</h6>
-        <ul>
-          {% if person.Head_1 %}
-          <li class="household-contact">
-            <p>{{ person.Head_1 }}</p>
-            <div class="icons">
-              {% if person.Head_1_Email %}
-              <a href="mailto:{{ person.Head_1_Email }}"><i class="fas fa-envelope"></i></a>
-              {% endif %}
-              {% if person.Head_1_Mobile %}
-              <a href="tel:{{ person.Head_1_Mobile }}"><i class="fas fa-phone"></i></a>
-              {% endif %}
-            </div>
-          </li>
-          {% endif %}
-
-          {% if person.Head_2 %}
-          <li class="household-contact">
-            <p>{{ person.Head_2 }}</p>
-            <div class="icons">
-              {% if person.Head_2_Email %}
-              <a href="mailto:{{ person.Head_2_Email }}"><i class="fas fa-envelope"></i></a>
-              {% endif %}
-              {% if person.Head_2_Mobile %}
-              <a href="tel:{{ person.Head_2_Mobile }}"><i class="fas fa-phone"></i></a>
-              {% endif %}
-            </div>
-          </li>
-          {% endif %}
-        </ul>
-      </div>
-      {% endif %}
     </article>
   {% endfor %}
 
