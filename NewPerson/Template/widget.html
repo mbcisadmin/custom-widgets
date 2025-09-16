@@ -45,6 +45,10 @@
             {% assign badge_text = "New Person" %}
           {% elsif person.New_Type == 2 %}
             {% assign badge_text = "New Again" %}
+          {% elsif person.New_Type == 3 %}
+            {% assign badge_text = "New to Location" %}
+          {% elsif person.New_Type == 4 %}
+            {% assign badge_text = "New to Location" %}
           {% endif %}
         {% endif %}
         <h2>{{ person.Display_Name }}</h2>
@@ -57,6 +61,8 @@
           {% elsif person.New_Type == 2 %}
               <i class="fas fa-redo" aria-hidden="true"></i>
           {% elsif person.New_Type == 3 %}
+              <i class="fas fa-plus" aria-hidden="true"></i>
+          {% elsif person.New_Type == 4 %}
               <i class="fas fa-plus" aria-hidden="true"></i>
           {% endif %}
           {{ badge_text }}
