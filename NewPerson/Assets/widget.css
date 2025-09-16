@@ -232,8 +232,11 @@
   flex-direction: column;
 }
 
-.picker-container > * {
+.picker-container > select, .picker-container > input {
   width: fit-content;
+  background-color: #E9E9ED;
+  padding: 0.65em 1em !important;
+  text-align: center;
 }
 
 .pickerLabel {
