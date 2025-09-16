@@ -276,9 +276,6 @@
 }
 
 @media (max-width: 480px) {
-  .person-card {
-    padding: 0.75em;
-  }
   .person-card h3 {
     font-size: 1em;
   }
