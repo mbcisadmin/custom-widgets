@@ -5,6 +5,10 @@
   --primaryColor: #1c2b39;
   --secondaryColor: #00a0e3;
   --tertiaryColor: #e3b400;
+  
+  --badgeColor1: #ea9c2e;
+  --badgeColor2: #7f19ba;
+  --badgeColor3: #19ba32;
 
   --blue: #00a0e3; /* type 1 default */
   --blue-text-safe: #0078aa;
@@ -13,9 +17,6 @@
   --comp-text-safe: #d84000;
   --comp-muted: #b74d20;
   --comp-soft: #e0a085;
-
-  --split-violet: #7f19ba; /* type 2 */
-  --split-amber: #ea9c2e; /* type 3 */
 
   --neutral-ink: #1c2b39;
   --neutral-bg: #f5f7fa;
@@ -49,7 +50,7 @@
 
 .new-person-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(375px, 1fr));
   gap: 1em;
   margin-top: 1em;
   align-items: stretch;
@@ -64,7 +65,7 @@
   box-shadow: 1px 1px 2px rgba(74, 74, 75, 0.17);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.25em;
   align-items: start;
 }
 
@@ -87,6 +88,10 @@
   column-gap: 0.5em;
   row-gap: 0.25em;
   justify-content: space-between;
+  background: var(--secondaryColor);
+  padding: 0.5em 1em;
+  transform: translateX(-1em) translateY(-1em);
+  opacity: 0.9;
 }
 
 .person-card .name > h2,
@@ -94,6 +99,7 @@
   margin: 0;
   white-space: nowrap;
   flex: 0 1 auto;
+  color: #fff;
 }
 
 .person-card .name > .badge {
@@ -116,13 +122,13 @@
    ========================================================= */
 /* Map types to a color variable */
 #NewPersonWidget .badge--type1 {
-  --badge-color: var(--split-amber);
+  --badge-color: var(--badgeColor1);
 } /* New Person */
 #NewPersonWidget .badge--type2 {
-  --badge-color: var(--split-violet);
+  --badge-color: var(--badgeColor2);
 } /* New Again */
 #NewPersonWidget .badge--type3 {
-  --badge-color: var(--blue);
+  --badge-color: var(--badgeColor3);
 } /* New to Program or 3rd state */
 
 /* Base badge styles; keep this after the type classes */
@@ -132,18 +138,12 @@
   align-items: center;
   gap: 0.35em;
   position: relative;
-  font-size: 0.85rem;
   font-weight: 900;
   white-space: nowrap;
   text-transform: uppercase;
-  color: var(--badge-color);
+  color: #ffffff;
   padding: 0.25em 0.75em;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--badge-color) 12%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--badge-color) 35%, transparent);
-  animation: badge-pop 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
-    badge-breathe 6s ease-in-out 1s infinite;
-  width: min-content;
+  background-color: var(--badge-color);
 }
 
 /* Icon inside badge uses currentColor */
