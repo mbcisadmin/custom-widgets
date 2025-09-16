@@ -63,7 +63,7 @@
         </span>
       </div>
       <div class="card-content">
-        <div class="group">
+        <div class="group card-content-section">
           <h6>Group</h6>
           {{ person.Group_Name }}
           {% assign iso = person.Participant_Start_Date %}
@@ -76,21 +76,21 @@
         </div>
   
         {% if person.Last_Event %}
-        <div class="last-event">
+        <div class="last-event card-content-section">
           <h6>Last Event</h6>
           <p>{{ person.Last_Event }}</p>
         </div>
         {% endif %}
   
         {% if person.Last_Congregation_Event %}
-        <div class="last-location-event">
+        <div class="last-location-event card-content-section">
           <h6>Last Location Event</h6>
           <p>{{ person.Last_Congregation_Event }}</p>
         </div>
         {% endif %}
   
         {% if person.Head_1 or person.Head_2 %}
-        <div class="household">
+        <div class="household card-content-section">
           <h6>Heads of Household</h6>
           <ul>
             {% if person.Head_1 %}
