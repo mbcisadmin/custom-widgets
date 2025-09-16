@@ -15,7 +15,6 @@
     : "https://mbcisadmin.github.io/custom-widgets/NewPerson/Template/widget.html";
 
   const allowedKeys = [
-    "@UserName",
     "@CongregationID",
     "@EventTypeID",
     "@ProgramID",
