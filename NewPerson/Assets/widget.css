@@ -79,16 +79,29 @@
   color: var(--secondaryColor);
 }
 
+
 .person-card .name {
   display: flex;
-  flex-direction: column;
-  width: 100%;
-  gap: 0.25em;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.5em;
+  row-gap: 0.25em;
+  justify-content: space-between;
 }
 
 .person-card .name > h2,
 .person-card .name > h3 {
   margin: 0;
+  white-space: nowrap;
+  flex: 0 1 auto;
+}
+
+.person-card .name > .badge {
+  flex: 0 0 auto;
+  margin-left: 0;
+  width: auto;
+  max-width: 100%;
+  font-size: 0.7rem;
 }
 
 .person-card h3 {
@@ -253,6 +266,9 @@
   .picker-container > * {
      width: 100%;
    }
+  .person-card .name > .badge {
+    margin-left: 0;          /* centered/left on its own line if you prefer */
+  }
 }
 
 @media (max-width: 480px) {
