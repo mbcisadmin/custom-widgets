@@ -220,14 +220,24 @@
 .date-picker-container {
   margin-bottom: 1em;
   font-size: 1em;
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
 }
 
 .date-picker-container input[type="date"] {
   padding: 0.4em;
   font-size: 1em;
+}
+
+.picker-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-container > * {
+  width: fit-content;
+}
+
+.pickerLabel {
+  font-size: 0.75rem;
 }
 
 /* =========================================================
