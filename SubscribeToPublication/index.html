@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subscribe</title>
+<style>
+/* ═══════════════════════════════════════
+   SUBSCRIBE TO PUBLICATION WIDGET
+   Standalone form — embed via iframe
+   ═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: transparent;
+  font-family: 'Inconsolata', 'SF Mono', 'Courier New', monospace;
+  color: #f5f5f5;
+  color-scheme: only dark;
+}
+
+/* Google Font loaded via link in head would be blocked cross-origin,
+   so we load it here */
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700;900&display=swap');
+
+.subscribe-form {
+  max-width: 420px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* ── Inputs ── */
+.subscribe-form input[type="text"],
+.subscribe-form input[type="email"] {
+  display: block;
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #fff;
+  font-family: 'Inconsolata', monospace;
+  font-size: 14px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  border-radius: 0;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  autocomplete: off;
+}
+
+.subscribe-form input::placeholder {
+  color: rgba(255,255,255,0.3);
+  font-size: 13px;
+}
+
+.subscribe-form input:focus {
+  border-color: #FF4C24;
+  background: rgba(255,255,255,0.07);
+}
+
+/* Autofill override */
+.subscribe-form input:-webkit-autofill,
+.subscribe-form input:-webkit-autofill:hover,
+.subscribe-form input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #131313 inset !important;
+  -webkit-text-fill-color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  caret-color: #fff !important;
+}
+
+/* ── Button ── */
+.subscribe-btn {
+  display: inline-block;
+  padding: 16px 52px;
+  font-family: 'Inconsolata', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #fff;
+  background: #FF4C24;
+  border: none;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.25,0,0,1);
+}
+
+.subscribe-btn:hover {
+  background: #ff6a4a;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 36px rgba(255,76,36,0.3);
+}
+
+.subscribe-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Status messages ── */
+.subscribe-status {
+  margin-top: 16px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  min-height: 20px;
+}
+
+.subscribe-status.error {
+  color: #FF4C24;
+}
+
+.subscribe-status.success {
+  color: rgba(255,255,255,0.6);
+}
+
+/* ── Success state ── */
+.subscribe-success {
+  display: none;
+}
+
+.subscribe-success h4 {
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0 0 16px;
+  line-height: 1.15;
+}
+
+.subscribe-success p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.8;
+}
+</style>
+</head>
+<body>
+
+<div class="subscribe-form" id="subscribeForm">
+  <form id="form" autocomplete="off" novalidate>
+    <input type="text" name="FirstName" placeholder="First Name" autocomplete="off" required>
+    <input type="text" name="LastName" placeholder="Last Name" autocomplete="off" required>
+    <input type="email" name="EmailAddress" placeholder="Email" autocomplete="off" required>
+    <button type="submit" class="subscribe-btn" id="submitBtn">Subscribe</button>
+    <div class="subscribe-status" id="status"></div>
+  </form>
+</div>
+
+<div class="subscribe-success" id="successMsg">
+  <h4>You&rsquo;re In!</h4>
+  <p>Check your email to confirm your subscription.</p>
+</div>
+
+<script>
+(function () {
+  /* ── Config from URL params (set by parent page) ── */
+  const params = new URLSearchParams(window.location.search);
+  const CONFIG = {
+    host: params.get("host") || "my.mcleanbible.org",
+    publicationId: params.get("publicationId") || "131",
+    templateId: params.get("templateId") || "84102",
+    returnUrl: params.get("returnUrl") || "",
+  };
+
+  const WIDGETS_BASE = "https://" + CONFIG.host + "/widgets";
+  const form = document.getElementById("form");
+  const btn = document.getElementById("submitBtn");
+  const status = document.getElementById("status");
+  const formWrap = document.getElementById("subscribeForm");
+  const successMsg = document.getElementById("successMsg");
+
+  /* ── Fetch CSRF token ── */
+  async function getCsrfToken() {
+    const res = await fetch(WIDGETS_BASE + "/Home/CSRFToken", {
+      credentials: "omit",
+    });
+    if (!res.ok) throw new Error("Failed to get CSRF token");
+    const data = await res.json();
+    return data.token;
+  }
+
+  /* ── Submit subscription ── */
+  async function subscribe(formData, csrfToken) {
+    const res = await fetch(
+      WIDGETS_BASE + "/Api/SubscriptionsApi/SendVerificationEmail",
+      {
+        method: "POST",
+        headers: { "x-csrf-token": csrfToken },
+        body: formData,
+        credentials: "omit",
+      }
+    );
+    if (!res.ok) throw new Error("Server error: " + res.status);
+    return res.json();
+  }
+
+  /* ── Form submit handler ── */
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    status.className = "subscribe-status";
+    status.textContent = "";
+
+    const firstName = form.FirstName.value.trim();
+    const lastName = form.LastName.value.trim();
+    const email = form.EmailAddress.value.trim();
+
+    if (!firstName || !lastName || !email) {
+      status.className = "subscribe-status error";
+      status.textContent = "Please fill in all fields.";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Sending...";
+
+    try {
+      const csrfToken = await getCsrfToken();
+
+      const fd = new FormData();
+      fd.append("FirstName", firstName);
+      fd.append("LastName", lastName);
+      fd.append("EmailAddress", email);
+      fd.append("PublicationID", CONFIG.publicationId);
+      fd.append("VerificationEmailTemplateID", CONFIG.templateId);
+      fd.append("ReturnUrl", CONFIG.returnUrl);
+
+      const result = await subscribe(fd, csrfToken);
+
+      if (result.success) {
+        formWrap.style.display = "none";
+        successMsg.style.display = "block";
+
+        /* Notify parent page */
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "subscribe-success" }, "*");
+        }
+      } else {
+        status.className = "subscribe-status error";
+        status.textContent = "Something went wrong. Please try again.";
+        btn.disabled = false;
+        btn.textContent = "Subscribe";
+      }
+    } catch (err) {
+      /* CSRF retry once */
+      try {
+        const freshToken = await getCsrfToken();
+        const fd = new FormData();
+        fd.append("FirstName", firstName);
+        fd.append("LastName", lastName);
+        fd.append("EmailAddress", email);
+        fd.append("PublicationID", CONFIG.publicationId);
+        fd.append("VerificationEmailTemplateID", CONFIG.templateId);
+        fd.append("ReturnUrl", CONFIG.returnUrl);
+
+        const result = await subscribe(fd, freshToken);
+        if (result.success) {
+          formWrap.style.display = "none";
+          successMsg.style.display = "block";
+          if (window.parent !== window) {
+            window.parent.postMessage({ type: "subscribe-success" }, "*");
+          }
+        } else {
+          throw new Error("Retry failed");
+        }
+      } catch (retryErr) {
+        status.className = "subscribe-status error";
+        status.textContent = "Something went wrong. Please try again.";
+        btn.disabled = false;
+        btn.textContent = "Subscribe";
+      }
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
