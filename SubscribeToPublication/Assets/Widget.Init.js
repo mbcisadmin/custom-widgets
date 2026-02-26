@@ -3,12 +3,12 @@
 
   /* ── Self-initialize: run when DOM is ready ── */
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initForm);
+    document.addEventListener("DOMContentLoaded", init);
   } else {
-    initForm();
+    init();
   }
 
-  function initForm() {
+  function init() {
     const form = document.getElementById("subscribeForm");
     const btn = document.getElementById("subscribeBtn");
     const status = document.getElementById("subscribeStatus");
@@ -17,13 +17,13 @@
 
     if (!form) return;
 
-    /* ── If returning from email confirmation (#thankyou in URL), show thank-you ── */
-    if (window.location.hash === "#thankyou") {
-      var thankyou = document.getElementById("thankyou");
-      if (thankyou) {
-        thankyou.style.display = "block";
-        formWrap.style.display = "none";
-      }
+    /* ── Step 2: Handle email confirmation return ── */
+    /* MP's email links back to this page with ?mpp-verify-id=<token>  */
+    /* We must call VerifyEmailLink to actually complete the subscription */
+    var verifyId = new URLSearchParams(window.location.search).get("mpp-verify-id");
+    if (verifyId) {
+      verifyEmailLink(verifyId);
+      return; /* Don't set up the form — we're in verification mode */
     }
 
     /* ── CSRF token ── */
@@ -33,6 +33,23 @@
       });
       if (!res.ok) throw new Error("CSRF token failed");
       return (await res.json()).token;
+    }
+
+    /* ── Verify the email confirmation link (completes subscription) ── */
+    async function verifyEmailLink(token) {
+      showThankYou(); /* Show immediately while we verify */
+      try {
+        var res = await fetch(
+          widgetsBase + "/Api/SubscriptionsApi/VerifyEmailLink?mppVerifyId=" + encodeURIComponent(token),
+          { credentials: "omit" }
+        );
+        var result = await res.json();
+        if (!result.success) {
+          console.warn("Subscription verification response:", result);
+        }
+      } catch (err) {
+        console.error("Subscription verification error:", err);
+      }
     }
 
     /* ── Subscribe API call ── */
@@ -62,16 +79,21 @@
       return fd;
     }
 
-    /* ── Show success ── */
-    function showSuccess() {
+    /* ── Show thank-you section ── */
+    function showThankYou() {
       formWrap.style.display = "none";
-      successMsg.style.display = "block";
-      /* Also activate the #thankyou section if it exists (GRIT page) */
       var thankyou = document.getElementById("thankyou");
       if (thankyou) {
         thankyou.style.display = "block";
-        successMsg.style.display = "none";
+      } else {
+        successMsg.style.display = "block";
       }
+    }
+
+    /* ── Show "check your email" message after initial submit ── */
+    function showCheckEmail() {
+      formWrap.style.display = "none";
+      successMsg.style.display = "block";
     }
 
     /* ── Form submit ── */
@@ -98,7 +120,7 @@
         var result = await subscribe(buildFormData(firstName, lastName, email), csrfToken);
 
         if (result.success) {
-          showSuccess();
+          showCheckEmail();
         } else {
           throw new Error("API returned failure");
         }
@@ -108,7 +130,7 @@
           var freshToken = await getCsrfToken();
           var retryResult = await subscribe(buildFormData(firstName, lastName, email), freshToken);
           if (retryResult.success) {
-            showSuccess();
+            showCheckEmail();
           } else {
             throw new Error("Retry failed");
           }
