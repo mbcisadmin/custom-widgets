@@ -1,20 +1,11 @@
 (function () {
-  const widgetId = "SubscribeWidget";
+  const widgetsBase = "https://my.mcleanbible.org/widgets";
 
-  /* ── Wait for the Custom Widget framework to render the template ── */
-  window.addEventListener("widgetLoaded", function handler(e) {
-    if (e.detail && e.detail.widgetId === widgetId) {
-      window.removeEventListener("widgetLoaded", handler);
-      initForm();
-    }
-  });
-
-  /* Also listen on the element itself (some versions fire there) */
-  const el = document.getElementById(widgetId);
-  if (el) {
-    el.addEventListener("widgetLoaded", function () {
-      initForm();
-    });
+  /* ── Self-initialize: run when DOM is ready ── */
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initForm);
+  } else {
+    initForm();
   }
 
   function initForm() {
@@ -25,13 +16,6 @@
     const successMsg = document.getElementById("subscribe-success");
 
     if (!form) return;
-
-    /* ── Read config from the widget element's data attributes ── */
-    const widget = document.getElementById(widgetId);
-    const publicationId = widget?.getAttribute("data-publication-id") || "131";
-    const templateId = widget?.getAttribute("data-template-id") || "84102";
-    const returnUrl = widget?.getAttribute("data-return-url") || window.location.href;
-    const widgetsBase = "https://my.mcleanbible.org/widgets";
 
     /* ── CSRF token ── */
     async function getCsrfToken() {
@@ -57,18 +41,36 @@
       return res.json();
     }
 
+    /* ── Build FormData from the form ── */
+    function buildFormData(firstName, lastName, email) {
+      var fd = new FormData();
+      fd.append("FirstName", firstName);
+      fd.append("LastName", lastName);
+      fd.append("EmailAddress", email);
+      fd.append("PublicationID", form.PublicationID.value);
+      fd.append("VerificationEmailTemplateID", form.VerificationEmailTemplateID.value);
+      fd.append("ReturnUrl", form.ReturnUrl.value || window.location.href);
+      return fd;
+    }
+
+    /* ── Show success ── */
+    function showSuccess() {
+      formWrap.style.display = "none";
+      successMsg.style.display = "block";
+    }
+
     /* ── Form submit ── */
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
       status.textContent = "";
       status.className = "";
 
-      const firstName = form.FirstName.value.trim();
-      const lastName = form.LastName.value.trim();
-      const email = form.EmailAddress.value.trim();
+      var firstName = form.FirstName.value.trim();
+      var lastName = form.LastName.value.trim();
+      var email = form.EmailAddress.value.trim();
 
       if (!firstName || !lastName || !email) {
-        status.className = "error";
+        status.className = "subscribe-error";
         status.textContent = "Please fill in all fields.";
         return;
       }
@@ -77,44 +79,26 @@
       btn.textContent = "Sending...";
 
       try {
-        const csrfToken = await getCsrfToken();
-        const fd = new FormData();
-        fd.append("FirstName", firstName);
-        fd.append("LastName", lastName);
-        fd.append("EmailAddress", email);
-        fd.append("PublicationID", publicationId);
-        fd.append("VerificationEmailTemplateID", templateId);
-        fd.append("ReturnUrl", returnUrl);
-
-        const result = await subscribe(fd, csrfToken);
+        var csrfToken = await getCsrfToken();
+        var result = await subscribe(buildFormData(firstName, lastName, email), csrfToken);
 
         if (result.success) {
-          formWrap.style.display = "none";
-          successMsg.style.display = "block";
+          showSuccess();
         } else {
           throw new Error("API returned failure");
         }
       } catch (err) {
         /* Retry once with fresh CSRF token */
         try {
-          const freshToken = await getCsrfToken();
-          const fd = new FormData();
-          fd.append("FirstName", firstName);
-          fd.append("LastName", lastName);
-          fd.append("EmailAddress", email);
-          fd.append("PublicationID", publicationId);
-          fd.append("VerificationEmailTemplateID", templateId);
-          fd.append("ReturnUrl", returnUrl);
-
-          const result = await subscribe(fd, freshToken);
-          if (result.success) {
-            formWrap.style.display = "none";
-            successMsg.style.display = "block";
+          var freshToken = await getCsrfToken();
+          var retryResult = await subscribe(buildFormData(firstName, lastName, email), freshToken);
+          if (retryResult.success) {
+            showSuccess();
           } else {
             throw new Error("Retry failed");
           }
         } catch (retryErr) {
-          status.className = "error";
+          status.className = "subscribe-error";
           status.textContent = "Something went wrong. Please try again.";
           btn.disabled = false;
           btn.textContent = "Subscribe";
