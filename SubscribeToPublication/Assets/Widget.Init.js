@@ -17,6 +17,15 @@
 
     if (!form) return;
 
+    /* ── If returning from email confirmation (#thankyou in URL), show thank-you ── */
+    if (window.location.hash === "#thankyou") {
+      var thankyou = document.getElementById("thankyou");
+      if (thankyou) {
+        thankyou.style.display = "block";
+        formWrap.style.display = "none";
+      }
+    }
+
     /* ── CSRF token ── */
     async function getCsrfToken() {
       const res = await fetch(widgetsBase + "/Home/CSRFToken", {
@@ -57,6 +66,12 @@
     function showSuccess() {
       formWrap.style.display = "none";
       successMsg.style.display = "block";
+      /* Also activate the #thankyou section if it exists (GRIT page) */
+      var thankyou = document.getElementById("thankyou");
+      if (thankyou) {
+        thankyou.style.display = "block";
+        successMsg.style.display = "none";
+      }
     }
 
     /* ── Form submit ── */
