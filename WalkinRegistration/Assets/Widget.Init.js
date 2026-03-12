@@ -2,18 +2,10 @@
   "use strict";
 
   // ── Configuration ──────────────────────────────────────────────────────
-  const MP_API = "https://my.mcleanbible.org/ministryplatformapi";
-
-  // Kids Quest group IDs — update here if groups change
-  const GROUP_IDS = [53012, 53013, 53014, 53015, 53016, 53017, 53018, 53019, 53020, 53021, 53022, 53023];
+  // CustomWidget SKY API — CORS-enabled, used by all MP custom widgets
+  const SKY_API = "https://mcleanbible.cloudapps.ministryplatform.cloud/sky/api/CustomWidget";
 
   const MAX_CHILDREN = 10;
-
-  // MP reference data IDs — confirm with your MP administrator if records aren't saving correctly
-  const HOUSEHOLD_POSITION_HEAD  = 1;   // Head of Household
-  const HOUSEHOLD_POSITION_CHILD = 2;   // Minor Child
-  const PARTICIPANT_TYPE_ID      = 4;   // Participant
-  const GROUP_ROLE_ID            = 16;  // Member
 
   // ── State ──────────────────────────────────────────────────────────────
   let groups        = [];   // [{Group_ID, Group_Name}] loaded from MP
@@ -30,14 +22,9 @@
   }
 
   function init() {
-    // Pre-load group names so the dropdown is ready when the volunteer reaches Step 2
-    loadGroups().catch(function (err) {
-      console.error("[WalkinReg] Failed to load groups:", err);
-    });
-
-    // Display the campus name if a locationId is present in the URL
-    loadLocationName().catch(function (err) {
-      console.error("[WalkinReg] Failed to load location name:", err);
+    // Load groups + campus name in one call via stored proc
+    loadConfig().catch(function (err) {
+      console.error("[WalkinReg] Failed to load config:", err);
     });
 
     setupStep1();
@@ -45,60 +32,47 @@
     setupStep3();
   }
 
-  // ── MP REST API Helpers ────────────────────────────────────────────────
+  // ── SKY API Helper ─────────────────────────────────────────────────────
+  // All MP custom widget API calls go through the CORS-enabled SKY API.
+  // Stored procedures handle both reads and writes server-side.
   function getToken() {
     return localStorage.getItem("mpp-widgets_AuthToken");
   }
 
-  async function mpGet(path) {
-    var res = await fetch(MP_API + path, {
-      headers: { Authorization: "Bearer " + getToken() }
+  async function skyApiCall(spName, params) {
+    var qs = "storedProcedure=" + encodeURIComponent(spName);
+    if (params) {
+      Object.keys(params).forEach(function (key) {
+        if (params[key] !== null && params[key] !== undefined) {
+          qs += "&" + encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
+        }
+      });
+    }
+    var res = await fetch(SKY_API + "?" + qs, {
+      headers: { Authorization: getToken() }
     });
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
-      throw new Error("GET " + path + " \u2192 " + res.status + ": " + body);
+      throw new Error(spName + " \u2192 " + res.status + ": " + body);
     }
     return res.json();
   }
 
-  async function mpPost(path, records) {
-    var res = await fetch(MP_API + path, {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + getToken(),
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(records)
-    });
-    if (!res.ok) {
-      var body = await res.text().catch(function () { return ""; });
-      throw new Error("POST " + path + " \u2192 " + res.status + ": " + body);
-    }
-    return res.json();
-  }
+  // ── Config Load (groups + campus name) ────────────────────────────────
+  async function loadConfig() {
+    var locId  = getLocationId();
+    var params = locId ? { CongregationID: locId } : {};
 
-  // ── Groups ─────────────────────────────────────────────────────────────
-  async function loadGroups() {
-    var ids = GROUP_IDS.join(",");
-    var data = await mpGet(
-      "/tables/Groups?$select=Group_ID,Group_Name&$filter=Group_ID in (" + ids + ")&$orderby=Group_Name"
-    );
-    groups = data || [];
-  }
+    var data = await skyApiCall("api_custom_WalkinReg_GetConfig", params);
 
-  // ── Location Name ─────────────────────────────────────────────────────
-  async function loadLocationName() {
-    var locId = getLocationId();
-    if (!locId) return;
+    // DataSet1: Kids Quest groups for the dropdown
+    groups = data.DataSet1 || [];
 
-    var data = await mpGet(
-      "/tables/Congregations?$select=Congregation_ID,Congregation_Name&$filter=Congregation_ID=" + encodeURIComponent(locId)
-    );
-
-    if (data && data.length > 0) {
+    // DataSet2: Campus/congregation name for the header
+    if (data.DataSet2 && data.DataSet2.length > 0) {
       var el = document.getElementById("location-name");
       if (el) {
-        el.textContent = data[0].Congregation_Name;
+        el.textContent = data.DataSet2[0].Congregation_Name;
         el.hidden = false;
       }
     }
@@ -163,7 +137,7 @@
     var isFirst   = container.children.length === 0;
 
     var card = document.createElement("div");
-    card.className  = "child-card";
+    card.className   = "child-card";
     card.dataset.seq = seq;
 
     card.innerHTML =
@@ -322,68 +296,34 @@
     }
   }
 
-  // ── MP Registration Flow ───────────────────────────────────────────────
+  // ── MP Registration (via stored proc) ─────────────────────────────────
   async function registerFamily(assignments) {
-    var locId         = getLocationId();
-    var congregationId = locId ? parseInt(locId, 10) : null;
+    var childrenJSON = JSON.stringify(assignments.map(function (a) {
+      return {
+        firstName: a.firstName,
+        lastName:  a.lastName,
+        birthdate: a.birthdate,
+        groupId:   a.groupId
+      };
+    }));
 
-    // 1. Create Household
-    var householdResult = await mpPost("/tables/Households", [{
-      Household_Name: parentData.lastName,
-      Congregation_ID: congregationId
-    }]);
-    var householdId = householdResult[0].Household_ID;
+    var params = {
+      ParentFirstName: parentData.firstName,
+      ParentLastName:  parentData.lastName,
+      ParentEmail:     parentData.email,
+      ParentPhone:     parentData.phone,
+      ChildrenJSON:    childrenJSON
+    };
 
-    // 2. Create parent Contact
-    await mpPost("/tables/Contacts", [{
-      First_Name:            parentData.firstName,
-      Last_Name:             parentData.lastName,
-      Display_Name:          parentData.lastName + ", " + parentData.firstName,
-      Email_Address:         parentData.email,
-      Mobile_Phone:          parentData.phone,
-      Household_ID:          householdId,
-      Household_Position_ID: HOUSEHOLD_POSITION_HEAD
-    }]);
+    var locId = getLocationId();
+    if (locId) params.CongregationID = locId;
 
-    // 3. Create child Contacts, then assign each to their selected group
-    for (var i = 0; i < assignments.length; i++) {
-      var child = assignments[i];
+    var data = await skyApiCall("api_custom_WalkinReg_CreateFamily", params);
 
-      var childResult = await mpPost("/tables/Contacts", [{
-        First_Name:            child.firstName,
-        Last_Name:             child.lastName,
-        Display_Name:          child.lastName + ", " + child.firstName,
-        Date_of_Birth:         child.birthdate,
-        Household_ID:          householdId,
-        Household_Position_ID: HOUSEHOLD_POSITION_CHILD
-      }]);
-      var childContactId = childResult[0].Contact_ID;
-
-      // 4. Get or create Participant record for this child
-      var participantId = await ensureParticipant(childContactId);
-
-      // 5. Add child to selected Kids Quest group
-      await mpPost("/tables/Group_Participants", [{
-        Group_ID:       child.groupId,
-        Participant_ID: participantId,
-        Group_Role_ID:  GROUP_ROLE_ID,
-        Start_Date:     todayISO()
-      }]);
+    var result = data.DataSet1 && data.DataSet1[0];
+    if (!result || !result.Success) {
+      throw new Error(result ? result.Message : "Unexpected response from server");
     }
-  }
-
-  async function ensureParticipant(contactId) {
-    // MP may auto-create a Participant on Contact creation — check before creating
-    var existing = await mpGet(
-      "/tables/Participants?$select=Participant_ID&$filter=Contact_ID=" + contactId
-    );
-    if (existing && existing.length > 0) return existing[0].Participant_ID;
-
-    var created = await mpPost("/tables/Participants", [{
-      Contact_ID:          contactId,
-      Participant_Type_ID: PARTICIPANT_TYPE_ID
-    }]);
-    return created[0].Participant_ID;
   }
 
   // ── Step 3: Thank You ──────────────────────────────────────────────────
@@ -414,16 +354,13 @@
     childrenData = [];
     childSeq     = 0;
 
-    // Clear parent fields
     document.getElementById("registration-form").reset();
 
-    // Rebuild children section with a single blank card
     document.getElementById("children-container").innerHTML = "";
     addChildCard();
     updateAddChildBtn();
     hideError("step1-error");
 
-    // Reset group assignment area
     document.getElementById("group-assignment-container").innerHTML = "";
     var assignBtn = document.getElementById("assign-submit-btn");
     assignBtn.disabled    = false;
