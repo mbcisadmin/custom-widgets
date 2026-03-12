@@ -52,7 +52,7 @@
 
   async function mpGet(path) {
     var res = await fetch(MP_API + path, {
-      headers: { Authorization: "Bearer " + getToken() }
+      headers: { Authorization: getToken() }
     });
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
@@ -65,7 +65,7 @@
     var res = await fetch(MP_API + path, {
       method: "POST",
       headers: {
-        Authorization: "Bearer " + getToken(),
+        Authorization: getToken(),
         "Content-Type": "application/json"
       },
       body: JSON.stringify(records)
