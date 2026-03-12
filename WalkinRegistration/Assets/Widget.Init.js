@@ -433,7 +433,8 @@
       Email_Address:         parentData.email,
       Mobile_Phone:          parentData.phone,
       Household_ID:          householdId,
-      Household_Position_ID: HOUSEHOLD_POSITION_HEAD
+      Household_Position_ID: HOUSEHOLD_POSITION_HEAD,
+      Company:               false
     }]);
 
     // 3. Create child Contacts, then assign each to their selected group
@@ -446,7 +447,8 @@
         Display_Name:          child.lastName + ", " + child.firstName,
         Date_of_Birth:         child.birthdate,
         Household_ID:          householdId,
-        Household_Position_ID: HOUSEHOLD_POSITION_CHILD
+        Household_Position_ID: HOUSEHOLD_POSITION_CHILD,
+        Company:               false
       }]);
       var childContactId = childResult[0].Contact_ID;
 
