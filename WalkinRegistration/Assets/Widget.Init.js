@@ -35,6 +35,11 @@
       console.error("[WalkinReg] Failed to load groups:", err);
     });
 
+    // Display the campus name if a locationId is present in the URL
+    loadLocationName().catch(function (err) {
+      console.error("[WalkinReg] Failed to load location name:", err);
+    });
+
     setupStep1();
     setupStep2();
     setupStep3();
@@ -79,6 +84,24 @@
       "/tables/Groups?$select=Group_ID,Group_Name&$filter=Group_ID in (" + ids + ")&$orderby=Group_Name"
     );
     groups = data || [];
+  }
+
+  // ── Location Name ─────────────────────────────────────────────────────
+  async function loadLocationName() {
+    var locId = getLocationId();
+    if (!locId) return;
+
+    var data = await mpGet(
+      "/tables/Congregations?$select=Congregation_ID,Congregation_Name&$filter=Congregation_ID=" + encodeURIComponent(locId)
+    );
+
+    if (data && data.length > 0) {
+      var el = document.getElementById("location-name");
+      if (el) {
+        el.textContent = data[0].Congregation_Name;
+        el.hidden = false;
+      }
+    }
   }
 
   // ── Utilities ──────────────────────────────────────────────────────────
