@@ -500,31 +500,46 @@
   async function registerFamily(assignments) {
     var locId          = getLocationId();
     var congregationId = locId ? parseInt(locId, 10) : null;
+    var parentContactId, householdId;
 
-    // 1. Create Household
-    var householdResult = await mpPost("/tables/Households", [{
-      Household_Name:  parentData.lastName,
-      Congregation_ID: congregationId
-    }]);
-    var householdId = householdResult[0].Household_ID;
+    // 1. Check for existing contact by email
+    var existing = await findExistingContact(parentData.email);
 
-    // 2. Create parent Contact
-    var parentResult = await mpPost("/tables/Contacts", [{
-      First_Name:            parentData.firstName,
-      Last_Name:             parentData.lastName,
-      Display_Name:          parentData.lastName + ", " + parentData.firstName,
-      Email_Address:         parentData.email,
-      Mobile_Phone:          parentData.phone,
-      Household_ID:          householdId,
-      Household_Position_ID: HOUSEHOLD_POSITION_HEAD,
-      Company:               false
-    }]);
-    var parentContactId = parentResult[0].Contact_ID;
+    if (existing) {
+      // Use existing contact — don't create duplicates
+      parentContactId = existing.Contact_ID;
+      householdId     = existing.Household_ID;
+      console.log("[WalkinReg] Found existing contact:", parentContactId);
+    } else {
+      // 2a. Create Household
+      var householdResult = await mpPost("/tables/Households", [{
+        Household_Name:  parentData.lastName,
+        Congregation_ID: congregationId
+      }]);
+      householdId = householdResult[0].Household_ID;
 
-    // 2b. Create Participant record for parent (Visitor)
+      // 2b. Create parent Contact
+      var parentResult = await mpPost("/tables/Contacts", [{
+        First_Name:            parentData.firstName,
+        Last_Name:             parentData.lastName,
+        Display_Name:          parentData.lastName + ", " + parentData.firstName,
+        Email_Address:         parentData.email,
+        Mobile_Phone:          parentData.phone,
+        Household_ID:          householdId,
+        Household_Position_ID: HOUSEHOLD_POSITION_HEAD,
+        Company:               false
+      }]);
+      parentContactId = parentResult[0].Contact_ID;
+    }
+
+    // 3. Ensure Participant record for parent (Visitor)
     await ensureParticipant(parentContactId);
 
-    // 3. Create child Contacts, then assign each to their selected group
+    // 4. Create or find user account, send welcome email (non-blocking)
+    ensureUserAccount(parentContactId, parentData.email, parentData.firstName, parentData.lastName)
+      .catch(function (err) { console.warn("[WalkinReg] User account/email:", err); });
+
+    // 5. Create child Contacts, then assign each to their selected group
     for (var i = 0; i < assignments.length; i++) {
       var child = assignments[i];
 
@@ -539,10 +554,10 @@
       }]);
       var childContactId = childResult[0].Contact_ID;
 
-      // 4. Get or create Participant record for this child
+      // 6. Get or create Participant record for this child
       var participantId = await ensureParticipant(childContactId);
 
-      // 5. Add child to selected Kids Quest group
+      // 7. Add child to selected Kids Quest group
       await mpPost("/tables/Group_Participants", [{
         Group_ID:       child.groupId,
         Participant_ID: participantId,
@@ -550,7 +565,7 @@
         Start_Date:     todayISO()
       }]);
 
-      // 6. Save selected attributes for this child
+      // 8. Save selected attributes for this child
       if (child.attributes && child.attributes.length > 0) {
         for (var a = 0; a < child.attributes.length; a++) {
           var attr = child.attributes[a];
@@ -564,6 +579,91 @@
         }
       }
     }
+  }
+
+  // ── Duplicate Contact Check ───────────────────────────────────────────
+  async function findExistingContact(email) {
+    var results = await mpGet(
+      "/tables/Contacts?$select=Contact_ID,Household_ID&$filter=Email_Address=" +
+      encodeURIComponent("'" + email + "'")
+    );
+    return (results && results.length > 0) ? results[0] : null;
+  }
+
+  // ── User Account & Welcome Email ─────────────────────────────────────
+  async function ensureUserAccount(contactId, email, firstName, lastName) {
+    // Check if user account already exists for this contact
+    var existingUsers = await mpGet(
+      "/tables/dp_Users?$select=User_ID&$filter=Contact_ID=" + contactId
+    );
+    if (existingUsers && existingUsers.length > 0) {
+      console.log("[WalkinReg] User account already exists for contact:", contactId);
+      return;
+    }
+
+    // Also check by username (email) in case contact was re-created
+    var byUsername = await mpGet(
+      "/tables/dp_Users?$select=User_ID&$filter=User_Name=" +
+      encodeURIComponent("'" + email + "'")
+    );
+    if (byUsername && byUsername.length > 0) {
+      console.log("[WalkinReg] User account already exists for email:", email);
+      return;
+    }
+
+    // Create user account with email as username
+    var displayName = lastName + ", " + firstName;
+    await mpPost("/tables/dp_Users", [{
+      User_Name:    email,
+      Display_Name: displayName,
+      Contact_ID:   contactId,
+      Domain_ID:    1
+    }]);
+    console.log("[WalkinReg] Created user account for:", email);
+
+    // Send welcome email via Communications table
+    await sendWelcomeEmail(contactId, firstName, email);
+  }
+
+  async function sendWelcomeEmail(contactId, firstName, email) {
+    var profileUrl = "https://mcleanbible.org/my-account/?w=household";
+    var resetUrl   = "https://my.mcleanbible.org/ministryplatformapi/oauth/connect/authorize?" +
+      "client_id=WALKIN&response_type=code&scope=openid&redirect_uri=" +
+      encodeURIComponent(profileUrl);
+
+    var subject = "Welcome to McLean Bible Church!";
+    var body =
+      "<p>Hi " + escHtml(firstName) + ",</p>" +
+      "<p>Thank you for visiting McLean Bible Church and registering your family " +
+      "with Kids Quest! We\u2019re so glad you\u2019re here.</p>" +
+      "<p>We\u2019ve created an account for you so you can manage your family\u2019s " +
+      "information online. To get started, please set up your password and " +
+      "complete your profile:</p>" +
+      "<p style=\"margin:1.5rem 0;\">" +
+        "<a href=\"" + profileUrl + "\" " +
+        "style=\"background:#2563eb;color:#fff;padding:12px 28px;border-radius:8px;" +
+        "text-decoration:none;font-weight:700;font-size:16px;\">" +
+        "Complete Your Profile</a>" +
+      "</p>" +
+      "<p>Your username is: <strong>" + escHtml(email) + "</strong></p>" +
+      "<p>If you haven\u2019t set a password yet, use the \u201cForgot Password\u201d " +
+      "link on the login page to create one.</p>" +
+      "<p>Completing your profile helps us serve your family better \u2014 " +
+      "we\u2019d love to have your mailing address so we can keep you connected!</p>" +
+      "<p>Blessings,<br />The Kids Quest Team</p>";
+
+    await mpPost("/tables/dp_Communications", [{
+      Author_User_ID:          1,
+      Subject:                 subject,
+      Body:                    body,
+      Domain_ID:               1,
+      Start_Date:              new Date().toISOString(),
+      From_Contact:            0,
+      Reply_to_Contact:        0,
+      Communication_Status_ID: 3,
+      To_Contact:              contactId
+    }]);
+    console.log("[WalkinReg] Welcome email queued for:", email);
   }
 
   async function ensureParticipant(contactId) {
