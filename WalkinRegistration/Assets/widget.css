@@ -5,6 +5,11 @@
   padding: 0;
 }
 
+/* Ensure hidden attribute works even if host page CSS overrides it */
+#walkin-widget [hidden] {
+  display: none !important;
+}
+
 /* ── Widget Container ── */
 #walkin-widget {
   max-width: 800px;
