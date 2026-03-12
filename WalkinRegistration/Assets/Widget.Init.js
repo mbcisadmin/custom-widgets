@@ -42,15 +42,21 @@
   async function skyApiCall(spName, params) {
     var qs = "storedProcedure=" + encodeURIComponent(spName);
     if (params) {
+      var spParts = [];
       Object.keys(params).forEach(function (key) {
         if (params[key] !== null && params[key] !== undefined) {
-          qs += "&" + encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
+          spParts.push("@" + key + "=" + params[key]);
         }
       });
+      if (spParts.length > 0) {
+        qs += "&spParams=" + encodeURIComponent(spParts.join("&"));
+      }
     }
-    var res = await fetch(SKY_API + "?" + qs, {
-      headers: { Authorization: getToken() }
-    });
+    var token = getToken();
+    if (token) {
+      qs += "&userData=" + encodeURIComponent(token);
+    }
+    var res = await fetch(SKY_API + "?" + qs);
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error(spName + " \u2192 " + res.status + ": " + body);
