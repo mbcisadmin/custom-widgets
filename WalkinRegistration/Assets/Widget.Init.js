@@ -649,65 +649,55 @@
       "we\u2019d love to have your mailing address so we can keep you connected!</p>" +
       "<p>Blessings,<br />The Kids Quest Team</p>";
 
-    // Use MP's Communications API (not raw table insert) to create + send
+    // Send via MP /messages endpoint (triggers actual email delivery)
     var headers = { "Content-Type": "application/json" };
     var token = getToken();
     if (token) headers.Authorization = "Bearer " + token;
 
-    var payload = {
-      From_Contact:            contactId,
-      Reply_to_Contact:        contactId,
-      Subject:                 subject,
-      Body:                    body,
-      Author_User_ID:          1,
-      Start_Date:              new Date().toISOString(),
-      Communication_Status_ID: 3,
-      Domain_ID:               1,
-      Recipients: [
-        {
-          Contact_ID:         contactId,
-          To:                 email,
-          Action_Status_ID:   3,  // Sent
-          Action_Status_Time: new Date().toISOString()
-        }
-      ]
+    var messagePayload = {
+      FromAddress:    { DisplayName: "Kids Quest", Address: "kidsquest@mcleanbible.org" },
+      ToAddresses:    [{ DisplayName: firstName, Address: email }],
+      ReplyToAddress: { DisplayName: "Kids Quest", Address: "kidsquest@mcleanbible.org" },
+      Subject:        subject,
+      Body:           body
     };
 
-    // Try the higher-level /communications endpoint first
-    var res = await fetch(MP_API + "/communications", {
+    var res = await fetch(MP_API + "/messages", {
       method: "POST",
       headers: headers,
       credentials: "include",
-      body: JSON.stringify(payload)
+      body: JSON.stringify(messagePayload)
     });
 
-    if (!res.ok) {
-      // Fallback: create via table inserts with Sent status
-      console.log("[WalkinReg] /communications endpoint failed, using table fallback");
-      var commResult = await mpPost("/tables/dp_Communications", [{
-        Author_User_ID:          1,
-        Subject:                 subject,
-        Body:                    body,
-        Domain_ID:               1,
-        Start_Date:              new Date().toISOString(),
-        From_Contact:            contactId,
-        Reply_to_Contact:        contactId,
-        Communication_Status_ID: 3
-      }]);
-      var communicationId = commResult[0].Communication_ID;
-
-      await mpPost("/tables/dp_Communication_Messages", [{
-        Communication_ID:   communicationId,
-        Action_Status_ID:   3,  // Sent
-        Action_Status_Time: new Date().toISOString(),
-        Contact_ID:         contactId,
-        From:               "kidsquest@mcleanbible.org",
-        To:                 email,
-        Subject:            subject,
-        Body:               body,
-        Domain_ID:          1,
-        Sent:               true
-      }]);
+    if (res.ok) {
+      // Patch dp_Communication_Messages to link Contact_ID so it shows on contact record
+      try {
+        var comm = await res.json();
+        var commId = comm.CommunicationId || comm.Communication_ID;
+        if (commId) {
+          var msgs = await mpGet(
+            "/tables/dp_Communication_Messages?$select=Communication_Message_ID" +
+            "&$filter=Communication_ID=" + commId
+          );
+          if (msgs && msgs.length > 0) {
+            await fetch(MP_API + "/tables/dp_Communication_Messages", {
+              method: "PUT",
+              headers: headers,
+              credentials: "include",
+              body: JSON.stringify(msgs.map(function(m) {
+                return {
+                  Communication_Message_ID: m.Communication_Message_ID,
+                  Contact_ID: contactId
+                };
+              }))
+            });
+          }
+        }
+      } catch (e) {
+        console.log("[WalkinReg] Could not patch Contact_ID on message:", e);
+      }
+    } else {
+      console.warn("[WalkinReg] /messages endpoint failed:", res.status, await res.text());
     }
     console.log("[WalkinReg] Welcome email sent for:", email);
   }
