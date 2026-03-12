@@ -12,8 +12,18 @@
   // Child attributes — add/remove entries here as needed
   // Set hasNotes: true for attributes that need a free-text field (e.g. Allergies)
   const CHILD_ATTRIBUTES = [
-    { id: 283, label: "Allergies", icon: "\u26A0\uFE0F", hasNotes: true, notesPlaceholder: "List allergies\u2026" },
-    { id: 391, label: "Potty Training", icon: "\uD83D\uDEBD" }
+    { id: 283, label: "Allergies",             icon: "\u270B",     hasNotes: true, notesPlaceholder: "List allergies\u2026" },
+    { id: 252, label: "Behavioral Concern",    icon: "\uD83C\uDFC3" },
+    { id: 174, label: "Custody Concern",       icon: "\uD83D\uDD12" },
+    { id: 378, label: "ASL",                   icon: "\uD83E\uDD1F" },
+    { id: 318, label: "Disability",            icon: "\u267F" },
+    { id: 200, label: "Special Considerations",icon: "\uD83D\uDE0A", hasNotes: true, notesPlaceholder: "Describe considerations\u2026" },
+    { id: 86,  label: "Health Concerns",       icon: "\uD83C\uDFE5", hasNotes: true, notesPlaceholder: "Describe health concerns\u2026" },
+    { id: 205, label: "EpiPen",               icon: "\u2757",     hasNotes: true, notesPlaceholder: "EpiPen details\u2026" },
+    { id: 377, label: "No Photo/Video",        icon: "\uD83D\uDEAB" },
+    { id: 379, label: "Restroom Needs",        icon: "\uD83D\uDEBB" },
+    { id: 391, label: "Potty Training",        icon: "\uD83D\uDEBD" },
+    { id: 393, label: "No Diaper Change",      icon: "\uD83D\uDC76" }
   ];
 
   // MP reference data IDs

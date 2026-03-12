@@ -250,6 +250,7 @@
 }
 
 #walkin-widget .attr-notes-wrap {
+  width: 100%;
   overflow: hidden;
   max-height: 0;
   transition: max-height 0.25s ease, margin-top 0.25s ease;
