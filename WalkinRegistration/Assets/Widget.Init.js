@@ -12,10 +12,8 @@
   // MP reference data IDs
   const HOUSEHOLD_POSITION_HEAD  = 1;
   const HOUSEHOLD_POSITION_CHILD = 2;
-  const GROUP_ROLE_ID            = 16;
-
-  // ── State ──────────────────────────────────────────────────────────────
-  let participantTypeId = null;  // looked up dynamically from Participant_Types table
+  const PARTICIPANT_TYPE_ID      = 22;  // Visitor
+  const GROUP_ROLE_ID            = 2;   // Member
   let groups        = [];
   let parentData    = null;
   let childrenData  = [];
@@ -45,9 +43,6 @@
     });
     loadLocationName().catch(function (err) {
       console.error("[WalkinReg] Failed to load location name:", err);
-    });
-    loadParticipantType().catch(function (err) {
-      console.error("[WalkinReg] Failed to load participant type:", err);
     });
 
     setupStep1();
@@ -197,27 +192,6 @@
         el.hidden = false;
       }
     }
-  }
-
-  // ── Participant Type ─────────────────────────────────────────────────
-  async function loadParticipantType() {
-    // Try both possible table names — MP instances vary
-    var tables = ["Participant_Types", "Participation_Types"];
-    for (var i = 0; i < tables.length; i++) {
-      try {
-        var data = await mpGet(
-          "/tables/" + tables[i] + "?$select=Participant_Type_ID&$orderby=Participant_Type_ID&$top=1"
-        );
-        if (data && data.length > 0) {
-          participantTypeId = data[0].Participant_Type_ID;
-          console.log("[WalkinReg] Using Participant_Type_ID:", participantTypeId, "from", tables[i]);
-          return;
-        }
-      } catch (e) {
-        console.log("[WalkinReg] Table " + tables[i] + " not found, trying next...");
-      }
-    }
-    console.warn("[WalkinReg] Could not find participant types table");
   }
 
   // ── Utilities ──────────────────────────────────────────────────────────
@@ -497,7 +471,7 @@
 
     var created = await mpPost("/tables/Participants", [{
       Contact_ID:              contactId,
-      Participant_Type_ID:     participantTypeId,
+      Participant_Type_ID:     PARTICIPANT_TYPE_ID,
       Participant_Start_Date:  todayISO()
     }]);
     return created[0].Participant_ID;
