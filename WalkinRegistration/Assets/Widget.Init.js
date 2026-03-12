@@ -627,9 +627,6 @@
 
   async function sendWelcomeEmail(contactId, firstName, email) {
     var profileUrl = "https://mcleanbible.org/my-account/?w=household";
-    var resetUrl   = "https://my.mcleanbible.org/ministryplatformapi/oauth/connect/authorize?" +
-      "client_id=WALKIN&response_type=code&scope=openid&redirect_uri=" +
-      encodeURIComponent(profileUrl);
 
     var subject = "Welcome to McLean Bible Church!";
     var body =
@@ -652,16 +649,29 @@
       "we\u2019d love to have your mailing address so we can keep you connected!</p>" +
       "<p>Blessings,<br />The Kids Quest Team</p>";
 
-    await mpPost("/tables/dp_Communications", [{
+    // Create communication record (From_Contact must be a valid Contact_ID)
+    var commResult = await mpPost("/tables/dp_Communications", [{
       Author_User_ID:          1,
       Subject:                 subject,
       Body:                    body,
       Domain_ID:               1,
       Start_Date:              new Date().toISOString(),
-      From_Contact:            0,
-      Reply_to_Contact:        0,
-      Communication_Status_ID: 3,
-      To_Contact:              contactId
+      From_Contact:            contactId,
+      Reply_to_Contact:        contactId,
+      Communication_Status_ID: 3
+    }]);
+    var communicationId = commResult[0].Communication_ID;
+
+    // Add recipient via Communication_Messages table
+    await mpPost("/tables/dp_Communication_Messages", [{
+      Communication_ID: communicationId,
+      Action_Status_ID: 1,
+      Contact_ID:       contactId,
+      From:             "kidsquest@mcleanbible.org",
+      To:               email,
+      Subject:          subject,
+      Body:             body,
+      Domain_ID:        1
     }]);
     console.log("[WalkinReg] Welcome email queued for:", email);
   }
