@@ -206,12 +206,68 @@
   background: #fdf0ee;
 }
 
+/* ── Attribute Expand/Collapse ── */
+#walkin-widget .attr-expand-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  background: none;
+  border: 1.5px dashed #b0bec5;
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  font-family: inherit;
+}
+
+#walkin-widget .attr-expand-btn:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #f8faff;
+}
+
+#walkin-widget .attr-expand-btn.open {
+  border-color: #2563eb;
+  color: #2563eb;
+  border-style: solid;
+  background: #f0f6ff;
+}
+
+#walkin-widget .attr-expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+#walkin-widget .attr-panel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease;
+  margin-top: 0;
+}
+
+#walkin-widget .attr-panel.open {
+  max-height: 600px;
+  opacity: 1;
+  margin-top: 0.6rem;
+}
+
 /* ── Child Attribute Icons ── */
 #walkin-widget .attr-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.75rem;
 }
 
 #walkin-widget .attr-toggle {

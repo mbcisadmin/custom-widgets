@@ -309,7 +309,25 @@
           '<input type="date" id="cd-' + seq + '" required max="' + todayISO() + '" />' +
         '</div>' +
       '</div>' +
-      (attrHtml ? '<div class="attr-row">' + attrHtml + '</div>' : '');
+      (attrHtml
+        ? '<button type="button" class="attr-expand-btn" id="attrexp-' + seq + '">' +
+            '<span class="attr-expand-icon">+</span> Special Needs / Accommodations' +
+          '</button>' +
+          '<div class="attr-panel" id="attrpanel-' + seq + '">' +
+            '<div class="attr-row">' + attrHtml + '</div>' +
+          '</div>'
+        : '');
+
+    // Wire up expand/collapse for attributes panel
+    var expandBtn = card.querySelector("#attrexp-" + seq);
+    if (expandBtn) {
+      expandBtn.addEventListener("click", function () {
+        var panel = card.querySelector("#attrpanel-" + seq);
+        var isOpen = panel.classList.toggle("open");
+        expandBtn.classList.toggle("open", isOpen);
+        expandBtn.querySelector(".attr-expand-icon").textContent = isOpen ? "\u2212" : "+";
+      });
+    }
 
     // Wire up attribute toggle buttons
     CHILD_ATTRIBUTES.forEach(function (attr) {
