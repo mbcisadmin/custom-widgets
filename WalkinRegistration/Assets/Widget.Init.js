@@ -472,8 +472,9 @@
     if (existing && existing.length > 0) return existing[0].Participant_ID;
 
     var created = await mpPost("/tables/Participants", [{
-      Contact_ID:          contactId,
-      Participant_Type_ID: PARTICIPANT_TYPE_ID
+      Contact_ID:              contactId,
+      Participant_Type_ID:     PARTICIPANT_TYPE_ID,
+      Participant_Start_Date:  todayISO()
     }]);
     return created[0].Participant_ID;
   }
