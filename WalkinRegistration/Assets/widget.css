@@ -206,6 +206,82 @@
   background: #fdf0ee;
 }
 
+/* ── Child Attribute Icons ── */
+#walkin-widget .attr-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+#walkin-widget .attr-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #fff;
+  border: 2px solid #d1d9e0;
+  border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  font-family: inherit;
+  min-height: 42px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#walkin-widget .attr-toggle:hover {
+  border-color: #2563eb;
+  background: #f0f6ff;
+}
+
+#walkin-widget .attr-toggle.active {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+#walkin-widget .attr-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+#walkin-widget .attr-notes-wrap {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease, margin-top 0.25s ease;
+  margin-top: 0;
+}
+
+#walkin-widget .attr-notes-wrap.open {
+  max-height: 120px;
+  margin-top: 0.5rem;
+}
+
+#walkin-widget .attr-notes {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  border: 2px solid #d1d9e0;
+  border-radius: 10px;
+  background: #fff;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+  resize: none;
+  min-height: 48px;
+}
+
+#walkin-widget .attr-notes:focus {
+  border-color: #2563eb;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
 /* ── Buttons ── */
 #walkin-widget .btn {
   display: inline-flex;

@@ -9,6 +9,12 @@
 
   const MAX_CHILDREN = 10;
 
+  // Child attributes — add/remove entries here as needed
+  // Set hasNotes: true for attributes that need a free-text field (e.g. Allergies)
+  const CHILD_ATTRIBUTES = [
+    { id: 283, label: "Allergies", icon: "\u26A0\uFE0F", hasNotes: true, notesPlaceholder: "List allergies\u2026" }
+  ];
+
   // MP reference data IDs
   const HOUSEHOLD_POSITION_HEAD  = 1;
   const HOUSEHOLD_POSITION_CHILD = 2;
@@ -256,6 +262,22 @@
     card.className   = "child-card";
     card.dataset.seq = seq;
 
+    var attrHtml = CHILD_ATTRIBUTES.map(function (attr) {
+      var btnId = "attr-" + attr.id + "-" + seq;
+      var notesId = "attrnotes-" + attr.id + "-" + seq;
+      var html =
+        '<button type="button" class="attr-toggle" id="' + btnId + '" data-attr-id="' + attr.id + '">' +
+          '<span class="attr-icon">' + attr.icon + '</span>' + escHtml(attr.label) +
+        '</button>';
+      if (attr.hasNotes) {
+        html +=
+          '<div class="attr-notes-wrap" id="noteswrap-' + attr.id + "-" + seq + '">' +
+            '<input type="text" class="attr-notes" id="' + notesId + '" placeholder="' + escHtml(attr.notesPlaceholder || "") + '" />' +
+          '</div>';
+      }
+      return html;
+    }).join("");
+
     card.innerHTML =
       '<div class="child-card-header">' +
         '<span class="child-label">Child</span>' +
@@ -275,7 +297,21 @@
           '<label for="cd-' + seq + '">Date of Birth <span class="required" aria-hidden="true">*</span></label>' +
           '<input type="date" id="cd-' + seq + '" required max="' + todayISO() + '" />' +
         '</div>' +
-      '</div>';
+      '</div>' +
+      (attrHtml ? '<div class="attr-row">' + attrHtml + '</div>' : '');
+
+    // Wire up attribute toggle buttons
+    CHILD_ATTRIBUTES.forEach(function (attr) {
+      var btn = card.querySelector("#attr-" + attr.id + "-" + seq);
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        btn.classList.toggle("active");
+        if (attr.hasNotes) {
+          var wrap = card.querySelector("#noteswrap-" + attr.id + "-" + seq);
+          if (wrap) wrap.classList.toggle("open", btn.classList.contains("active"));
+        }
+      });
+    });
 
     var removeBtn = card.querySelector(".remove-child-btn");
     if (removeBtn) {
@@ -321,10 +357,26 @@
     childrenData = [];
     document.querySelectorAll(".child-card").forEach(function (card) {
       var seq = card.dataset.seq;
+
+      // Collect selected attributes
+      var attrs = [];
+      CHILD_ATTRIBUTES.forEach(function (attr) {
+        var btn = card.querySelector("#attr-" + attr.id + "-" + seq);
+        if (btn && btn.classList.contains("active")) {
+          var notes = "";
+          if (attr.hasNotes) {
+            var notesInput = card.querySelector("#attrnotes-" + attr.id + "-" + seq);
+            if (notesInput) notes = notesInput.value.trim();
+          }
+          attrs.push({ attributeId: attr.id, notes: notes });
+        }
+      });
+
       childrenData.push({
-        firstName: document.getElementById("cf-" + seq).value.trim(),
-        lastName:  document.getElementById("cl-" + seq).value.trim(),
-        birthdate: document.getElementById("cd-" + seq).value
+        firstName:  document.getElementById("cf-" + seq).value.trim(),
+        lastName:   document.getElementById("cl-" + seq).value.trim(),
+        birthdate:  document.getElementById("cd-" + seq).value,
+        attributes: attrs
       });
     });
 
@@ -460,6 +512,20 @@
         Group_Role_ID:  GROUP_ROLE_ID,
         Start_Date:     todayISO()
       }]);
+
+      // 6. Save selected attributes for this child
+      if (child.attributes && child.attributes.length > 0) {
+        for (var a = 0; a < child.attributes.length; a++) {
+          var attr = child.attributes[a];
+          var attrRecord = {
+            Contact_ID:   childContactId,
+            Attribute_ID: attr.attributeId,
+            Start_Date:   todayISO()
+          };
+          if (attr.notes) attrRecord.Notes = attr.notes;
+          await mpPost("/tables/Contact_Attributes", [attrRecord]);
+        }
+      }
     }
   }
 
