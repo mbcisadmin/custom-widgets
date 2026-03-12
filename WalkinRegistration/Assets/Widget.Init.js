@@ -51,9 +51,15 @@
   }
 
   async function mpGet(path) {
-    var res = await fetch(MP_API + path, {
-      headers: { Authorization: getToken() }
-    });
+    var token = getToken();
+    var headers = {};
+    var opts = { headers: headers };
+    if (token) {
+      headers.Authorization = "Bearer " + token;
+    } else {
+      opts.credentials = "include";
+    }
+    var res = await fetch(MP_API + path, opts);
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("GET " + path + " → " + res.status + ": " + body);
@@ -62,14 +68,15 @@
   }
 
   async function mpPost(path, records) {
-    var res = await fetch(MP_API + path, {
-      method: "POST",
-      headers: {
-        Authorization: getToken(),
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(records)
-    });
+    var token = getToken();
+    var headers = { "Content-Type": "application/json" };
+    var opts = { method: "POST", headers: headers, body: JSON.stringify(records) };
+    if (token) {
+      headers.Authorization = "Bearer " + token;
+    } else {
+      opts.credentials = "include";
+    }
+    var res = await fetch(MP_API + path, opts);
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("POST " + path + " → " + res.status + ": " + body);
