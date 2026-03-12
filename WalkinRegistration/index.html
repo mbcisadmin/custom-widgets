@@ -5,95 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
     <title>Kids Quest Walk-In Registration</title>
     <link rel="stylesheet" href="https://mbcisadmin.github.io/custom-widgets/WalkinRegistration/Assets/widget.css" />
+    <style>
+      /* Only needed when widget runs as a standalone page */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        background: #f0f2f5;
+        min-height: 100vh;
+        margin: 0;
+      }
+    </style>
   </head>
   <body>
-    <div id="walkin-widget">
 
-      <!-- ── Step 1: Parent & Children Form (parent fills out) ── -->
-      <section id="step-1" class="step">
-        <div class="step-header">
-          <p id="location-name" class="location-name" hidden></p>
-          <h1>Kids Quest Walk-In Registration</h1>
-          <p class="step-subtitle">Please fill in your family's information below.</p>
-        </div>
+    <!--
+      ┌──────────────────────────────────────────────────────────────────┐
+      │  EMBED ON YOUR MP PAGE                                          │
+      │                                                                  │
+      │  Copy these three lines into any page on my.mcleanbible.org:    │
+      │                                                                  │
+      │  <div id="walkin-widget"></div>                                 │
+      │  <link rel="stylesheet" href="https://mbcisadmin.github.io/    │
+      │    custom-widgets/WalkinRegistration/Assets/widget.css" />      │
+      │  <script src="https://mbcisadmin.github.io/custom-widgets/     │
+      │    WalkinRegistration/Assets/Widget.Init.js"></script>          │
+      │                                                                  │
+      │  The JS auto-injects all form HTML into #walkin-widget.         │
+      │  Pass ?locationId=15 in the URL to show the campus name.        │
+      └──────────────────────────────────────────────────────────────────┘
+    -->
 
-        <form id="registration-form" novalidate>
-
-          <!-- Parent / Guardian -->
-          <div class="section-card">
-            <h2 class="section-title">Parent / Guardian</h2>
-            <div class="form-row">
-              <div class="form-field">
-                <label for="parent-first">First Name <span class="required" aria-hidden="true">*</span></label>
-                <input type="text" id="parent-first" required autocomplete="off" inputmode="text" placeholder="First name" />
-              </div>
-              <div class="form-field">
-                <label for="parent-last">Last Name <span class="required" aria-hidden="true">*</span></label>
-                <input type="text" id="parent-last" required autocomplete="off" inputmode="text" placeholder="Last name" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-field">
-                <label for="parent-email">Email Address <span class="required" aria-hidden="true">*</span></label>
-                <input type="email" id="parent-email" required autocomplete="off" inputmode="email" placeholder="email@example.com" />
-              </div>
-              <div class="form-field">
-                <label for="parent-phone">Phone Number <span class="required" aria-hidden="true">*</span></label>
-                <input type="tel" id="parent-phone" required autocomplete="off" inputmode="tel" placeholder="(555) 555-5555" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Children -->
-          <div class="section-card">
-            <h2 class="section-title">Children</h2>
-            <div id="children-container"></div>
-            <button type="button" id="add-child-btn" class="btn btn--secondary btn--add">+ Add Another Child</button>
-          </div>
-
-          <div id="step1-error" class="error-msg" hidden></div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn btn--primary btn--large">Submit Family Information &rarr;</button>
-          </div>
-
-        </form>
-      </section>
-
-      <!-- ── Step 2: Volunteer Group Assignment ── -->
-      <section id="step-2" class="step" hidden>
-        <div class="step-header step-header--volunteer">
-          <div class="handoff-badge">Volunteer Action Required</div>
-          <h1>Assign Children to Groups</h1>
-          <p class="step-subtitle">Please take the iPad back from the parent and assign each child to the correct group.</p>
-        </div>
-
-        <form id="assign-form">
-          <div id="group-assignment-container"></div>
-          <div id="step2-error" class="error-msg" hidden></div>
-          <div class="form-actions">
-            <button type="submit" id="assign-submit-btn" class="btn btn--primary btn--large">Complete Registration</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- ── Step 3: Thank You ── -->
-      <section id="step-3" class="step" hidden>
-        <div class="thankyou-card">
-          <div class="thankyou-icon" aria-hidden="true">&#10003;</div>
-          <h1>Registration Complete!</h1>
-          <p class="thankyou-message">
-            Your family has been registered for Kids Quest.<br />
-            <strong>Please proceed to the check-in station to check in your children.</strong>
-          </p>
-          <p class="thankyou-reset">
-            This form will reset automatically in <span id="countdown">30</span> seconds.
-          </p>
-          <button type="button" id="new-family-btn" class="btn btn--secondary">Register Another Family</button>
-        </div>
-      </section>
-
-    </div>
+    <div id="walkin-widget"></div>
 
     <script src="https://mbcisadmin.github.io/custom-widgets/dist/js/forceLogin.js"></script>
     <script src="https://mbcisadmin.github.io/custom-widgets/WalkinRegistration/Assets/Widget.Init.js"></script>

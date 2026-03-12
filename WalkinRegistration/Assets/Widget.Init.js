@@ -2,15 +2,24 @@
   "use strict";
 
   // ── Configuration ──────────────────────────────────────────────────────
-  const SKY_API = "https://mcleanbible.cloudapps.ministryplatform.cloud/sky/api/CustomWidget";
+  const MP_API = "https://my.mcleanbible.org/ministryplatformapi";
+
+  // Kids Quest group IDs — update here if groups change
+  const GROUP_IDS = [53012, 53013, 53014, 53015, 53016, 53017, 53018, 53019, 53020, 53021, 53022, 53023];
 
   const MAX_CHILDREN = 10;
 
+  // MP reference data IDs
+  const HOUSEHOLD_POSITION_HEAD  = 1;
+  const HOUSEHOLD_POSITION_CHILD = 2;
+  const PARTICIPANT_TYPE_ID      = 4;
+  const GROUP_ROLE_ID            = 16;
+
   // ── State ──────────────────────────────────────────────────────────────
-  let groups        = [];   // [{Group_ID, Group_Name}] loaded from MP
+  let groups        = [];
   let parentData    = null;
   let childrenData  = [];
-  let childSeq      = 0;    // ever-increasing to generate unique input IDs
+  let childSeq      = 0;
   let countdownTimer = null;
 
   // ── Bootstrap ──────────────────────────────────────────────────────────
@@ -21,9 +30,21 @@
   }
 
   function init() {
-    // Load groups + campus name via stored proc
-    loadConfig().catch(function (err) {
-      console.error("[WalkinReg] Failed to load config:", err);
+    var root = document.getElementById("walkin-widget");
+    if (!root) {
+      console.error("[WalkinReg] Missing #walkin-widget container.");
+      return;
+    }
+
+    // Inject the widget HTML into the container
+    root.innerHTML = buildWidgetHtml();
+
+    // Load groups and location name from MP
+    loadGroups().catch(function (err) {
+      console.error("[WalkinReg] Failed to load groups:", err);
+    });
+    loadLocationName().catch(function (err) {
+      console.error("[WalkinReg] Failed to load location name:", err);
     });
 
     setupStep1();
@@ -31,51 +52,145 @@
     setupStep3();
   }
 
-  // ── SKY API Helper ─────────────────────────────────────────────────────
+  // ── Widget HTML ──────────────────────────────────────────────────────
+  function buildWidgetHtml() {
+    return (
+      '<!-- Step 1: Parent & Children Form -->' +
+      '<section id="step-1" class="step">' +
+        '<div class="step-header">' +
+          '<p id="location-name" class="location-name" hidden></p>' +
+          '<h1>Kids Quest Walk-In Registration</h1>' +
+          '<p class="step-subtitle">Please fill in your family\'s information below.</p>' +
+        '</div>' +
+        '<form id="registration-form" novalidate>' +
+          '<div class="section-card">' +
+            '<h2 class="section-title">Parent / Guardian</h2>' +
+            '<div class="form-row">' +
+              '<div class="form-field">' +
+                '<label for="parent-first">First Name <span class="required" aria-hidden="true">*</span></label>' +
+                '<input type="text" id="parent-first" required autocomplete="off" inputmode="text" placeholder="First name" />' +
+              '</div>' +
+              '<div class="form-field">' +
+                '<label for="parent-last">Last Name <span class="required" aria-hidden="true">*</span></label>' +
+                '<input type="text" id="parent-last" required autocomplete="off" inputmode="text" placeholder="Last name" />' +
+              '</div>' +
+            '</div>' +
+            '<div class="form-row">' +
+              '<div class="form-field">' +
+                '<label for="parent-email">Email Address <span class="required" aria-hidden="true">*</span></label>' +
+                '<input type="email" id="parent-email" required autocomplete="off" inputmode="email" placeholder="email@example.com" />' +
+              '</div>' +
+              '<div class="form-field">' +
+                '<label for="parent-phone">Phone Number <span class="required" aria-hidden="true">*</span></label>' +
+                '<input type="tel" id="parent-phone" required autocomplete="off" inputmode="tel" placeholder="(555) 555-5555" />' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="section-card">' +
+            '<h2 class="section-title">Children</h2>' +
+            '<div id="children-container"></div>' +
+            '<button type="button" id="add-child-btn" class="btn btn--secondary btn--add">+ Add Another Child</button>' +
+          '</div>' +
+          '<div id="step1-error" class="error-msg" hidden></div>' +
+          '<div class="form-actions">' +
+            '<button type="submit" class="btn btn--primary btn--large">Submit Family Information &rarr;</button>' +
+          '</div>' +
+        '</form>' +
+      '</section>' +
+
+      '<!-- Step 2: Volunteer Group Assignment -->' +
+      '<section id="step-2" class="step" hidden>' +
+        '<div class="step-header step-header--volunteer">' +
+          '<div class="handoff-badge">Volunteer Action Required</div>' +
+          '<h1>Assign Children to Groups</h1>' +
+          '<p class="step-subtitle">Please take the iPad back from the parent and assign each child to the correct group.</p>' +
+        '</div>' +
+        '<form id="assign-form">' +
+          '<div id="group-assignment-container"></div>' +
+          '<div id="step2-error" class="error-msg" hidden></div>' +
+          '<div class="form-actions">' +
+            '<button type="submit" id="assign-submit-btn" class="btn btn--primary btn--large">Complete Registration</button>' +
+          '</div>' +
+        '</form>' +
+      '</section>' +
+
+      '<!-- Step 3: Thank You -->' +
+      '<section id="step-3" class="step" hidden>' +
+        '<div class="thankyou-card">' +
+          '<div class="thankyou-icon" aria-hidden="true">&#10003;</div>' +
+          '<h1>Registration Complete!</h1>' +
+          '<p class="thankyou-message">' +
+            'Your family has been registered for Kids Quest.<br />' +
+            '<strong>Please proceed to the check-in station to check in your children.</strong>' +
+          '</p>' +
+          '<p class="thankyou-reset">' +
+            'This form will reset automatically in <span id="countdown">30</span> seconds.' +
+          '</p>' +
+          '<button type="button" id="new-family-btn" class="btn btn--secondary">Register Another Family</button>' +
+        '</div>' +
+      '</section>'
+    );
+  }
+
+  // ── MP REST API Helpers ────────────────────────────────────────────────
   function getToken() {
     return localStorage.getItem("mpp-widgets_AuthToken");
   }
 
-  async function skyApiCall(spName, params) {
-    var qs = "storedProcedure=" + encodeURIComponent(spName);
-    if (params) {
-      var spParts = [];
-      Object.keys(params).forEach(function (key) {
-        if (params[key] !== null && params[key] !== undefined) {
-          spParts.push("@" + key + "=" + params[key]);
-        }
-      });
-      if (spParts.length > 0) {
-        qs += "&spParams=" + encodeURIComponent(spParts.join("&"));
-      }
-    }
+  async function mpGet(path) {
+    var headers = {};
     var token = getToken();
-    if (token) {
-      qs += "&userData=" + encodeURIComponent(token);
-    }
-    var res = await fetch(SKY_API + "?" + qs);
+    if (token) headers.Authorization = "Bearer " + token;
+    var res = await fetch(MP_API + path, {
+      headers: headers,
+      credentials: "include"
+    });
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
-      throw new Error(spName + " \u2192 " + res.status + ": " + body);
+      throw new Error("GET " + path + " \u2192 " + res.status + ": " + body);
     }
     return res.json();
   }
 
-  // ── Config Load (groups + campus name) ────────────────────────────────
-  async function loadConfig() {
-    var locId  = getLocationId();
-    var params = locId ? { CongregationID: locId } : {};
+  async function mpPost(path, records) {
+    var headers = { "Content-Type": "application/json" };
+    var token = getToken();
+    if (token) headers.Authorization = "Bearer " + token;
+    var res = await fetch(MP_API + path, {
+      method: "POST",
+      headers: headers,
+      credentials: "include",
+      body: JSON.stringify(records)
+    });
+    if (!res.ok) {
+      var body = await res.text().catch(function () { return ""; });
+      throw new Error("POST " + path + " \u2192 " + res.status + ": " + body);
+    }
+    return res.json();
+  }
 
-    var data = await skyApiCall("api_custom_WalkinReg_GetConfig", params);
+  // ── Groups ─────────────────────────────────────────────────────────────
+  async function loadGroups() {
+    var ids = GROUP_IDS.join(",");
+    var data = await mpGet(
+      "/tables/Groups?$select=Group_ID,Group_Name&$filter=Group_ID in (" + ids + ")&$orderby=Group_Name"
+    );
+    groups = data || [];
+  }
 
-    // DataSet1: Kids Quest groups for the dropdown
-    groups = data.DataSet1 || [];
+  // ── Location Name ─────────────────────────────────────────────────────
+  async function loadLocationName() {
+    var locId = getLocationId();
+    if (!locId) return;
 
-    // DataSet2: Campus/congregation name for the header
-    if (data.DataSet2 && data.DataSet2.length > 0) {
+    var data = await mpGet(
+      "/tables/Congregations?$select=Congregation_ID,Congregation_Name&$filter=Congregation_ID=" + encodeURIComponent(locId)
+    );
+
+    if (data && data.length > 0) {
       var el = document.getElementById("location-name");
       if (el) {
-        el.textContent = data.DataSet2[0].Congregation_Name;
+        el.textContent = data[0].Congregation_Name;
         el.hidden = false;
       }
     }
@@ -84,7 +199,7 @@
   // ── Utilities ──────────────────────────────────────────────────────────
   function calculateAge(isoDate) {
     var today = new Date();
-    var birth = new Date(isoDate + "T00:00:00"); // local midnight avoids timezone drift
+    var birth = new Date(isoDate + "T00:00:00");
     var years  = today.getFullYear() - birth.getFullYear();
     var months = today.getMonth()    - birth.getMonth();
 
@@ -123,7 +238,7 @@
 
   // ── Step 1: Family Registration Form ──────────────────────────────────
   function setupStep1() {
-    addChildCard(); // first child is always present
+    addChildCard();
 
     document.getElementById("add-child-btn").addEventListener("click", function () {
       var count = document.querySelectorAll(".child-card").length;
@@ -228,7 +343,6 @@
     var container = document.getElementById("group-assignment-container");
     container.innerHTML = "";
 
-    // If groups haven't loaded yet, show a loading state and poll until ready
     if (groups.length === 0) {
       container.innerHTML = '<p class="loading-notice">Loading groups&#8230; please wait a moment.</p>';
       var poll = setInterval(function () {
@@ -299,34 +413,67 @@
     }
   }
 
-  // ── MP Registration (via stored proc) ─────────────────────────────────
+  // ── MP Registration (direct table API calls) ──────────────────────────
   async function registerFamily(assignments) {
-    var childrenJSON = JSON.stringify(assignments.map(function (a) {
-      return {
-        firstName: a.firstName,
-        lastName:  a.lastName,
-        birthdate: a.birthdate,
-        groupId:   a.groupId
-      };
-    }));
+    var locId          = getLocationId();
+    var congregationId = locId ? parseInt(locId, 10) : null;
 
-    var params = {
-      ParentFirstName: parentData.firstName,
-      ParentLastName:  parentData.lastName,
-      ParentEmail:     parentData.email,
-      ParentPhone:     parentData.phone,
-      ChildrenJSON:    childrenJSON
-    };
+    // 1. Create Household
+    var householdResult = await mpPost("/tables/Households", [{
+      Household_Name:  parentData.lastName,
+      Congregation_ID: congregationId
+    }]);
+    var householdId = householdResult[0].Household_ID;
 
-    var locId = getLocationId();
-    if (locId) params.CongregationID = locId;
+    // 2. Create parent Contact
+    await mpPost("/tables/Contacts", [{
+      First_Name:            parentData.firstName,
+      Last_Name:             parentData.lastName,
+      Display_Name:          parentData.lastName + ", " + parentData.firstName,
+      Email_Address:         parentData.email,
+      Mobile_Phone:          parentData.phone,
+      Household_ID:          householdId,
+      Household_Position_ID: HOUSEHOLD_POSITION_HEAD
+    }]);
 
-    var data = await skyApiCall("api_custom_WalkinReg_CreateFamily", params);
+    // 3. Create child Contacts, then assign each to their selected group
+    for (var i = 0; i < assignments.length; i++) {
+      var child = assignments[i];
 
-    var result = data.DataSet1 && data.DataSet1[0];
-    if (!result || !result.Success) {
-      throw new Error(result ? result.Message : "Unexpected response from server");
+      var childResult = await mpPost("/tables/Contacts", [{
+        First_Name:            child.firstName,
+        Last_Name:             child.lastName,
+        Display_Name:          child.lastName + ", " + child.firstName,
+        Date_of_Birth:         child.birthdate,
+        Household_ID:          householdId,
+        Household_Position_ID: HOUSEHOLD_POSITION_CHILD
+      }]);
+      var childContactId = childResult[0].Contact_ID;
+
+      // 4. Get or create Participant record for this child
+      var participantId = await ensureParticipant(childContactId);
+
+      // 5. Add child to selected Kids Quest group
+      await mpPost("/tables/Group_Participants", [{
+        Group_ID:       child.groupId,
+        Participant_ID: participantId,
+        Group_Role_ID:  GROUP_ROLE_ID,
+        Start_Date:     todayISO()
+      }]);
     }
+  }
+
+  async function ensureParticipant(contactId) {
+    var existing = await mpGet(
+      "/tables/Participants?$select=Participant_ID&$filter=Contact_ID=" + contactId
+    );
+    if (existing && existing.length > 0) return existing[0].Participant_ID;
+
+    var created = await mpPost("/tables/Participants", [{
+      Contact_ID:          contactId,
+      Participant_Type_ID: PARTICIPANT_TYPE_ID
+    }]);
+    return created[0].Participant_ID;
   }
 
   // ── Step 3: Thank You ──────────────────────────────────────────────────

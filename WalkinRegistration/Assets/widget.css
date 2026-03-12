@@ -1,16 +1,8 @@
-/* ── Reset & Base ── */
-*, *::before, *::after {
+/* ── Scoped Reset ── */
+#walkin-widget *, #walkin-widget *::before, #walkin-widget *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  background: #f0f2f5;
-  color: #1a1a2e;
-  min-height: 100vh;
-  -webkit-text-size-adjust: 100%;
 }
 
 /* ── Widget Container ── */
@@ -18,25 +10,28 @@ body {
   max-width: 800px;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #1a1a2e;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* ── Step Transitions ── */
-.step {
-  animation: fadeIn 0.2s ease;
+#walkin-widget .step {
+  animation: walkinFadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
+@keyframes walkinFadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Step Header ── */
-.step-header {
+#walkin-widget .step-header {
   text-align: center;
   margin-bottom: 1.75rem;
 }
 
-.location-name {
+#walkin-widget .location-name {
   font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -45,7 +40,7 @@ body {
   margin-bottom: 0.4rem;
 }
 
-.step-header h1 {
+#walkin-widget .step-header h1 {
   font-size: 1.8rem;
   font-weight: 800;
   color: #0a2342;
@@ -53,13 +48,13 @@ body {
   line-height: 1.2;
 }
 
-.step-subtitle {
+#walkin-widget .step-subtitle {
   font-size: 1.05rem;
   color: #555;
 }
 
 /* Volunteer handoff header */
-.step-header--volunteer {
+#walkin-widget .step-header--volunteer {
   background: #fff8ec;
   border: 2px solid #f5a623;
   border-radius: 14px;
@@ -68,7 +63,7 @@ body {
   text-align: center;
 }
 
-.handoff-badge {
+#walkin-widget .handoff-badge {
   display: inline-block;
   background: #f5a623;
   color: #fff;
@@ -82,7 +77,7 @@ body {
 }
 
 /* ── Section Cards ── */
-.section-card {
+#walkin-widget .section-card {
   background: #fff;
   border-radius: 14px;
   padding: 1.5rem;
@@ -90,7 +85,7 @@ body {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
 }
 
-.section-title {
+#walkin-widget .section-title {
   font-size: 1.1rem;
   font-weight: 700;
   color: #0a2342;
@@ -100,50 +95,50 @@ body {
 }
 
 /* ── Form Layout ── */
-.form-row {
+#walkin-widget .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.9rem;
   margin-bottom: 0.9rem;
 }
 
-.form-row:last-child {
+#walkin-widget .form-row:last-child {
   margin-bottom: 0;
 }
 
-.form-row--three {
+#walkin-widget .form-row--three {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
 @media (max-width: 600px) {
-  .form-row,
-  .form-row--three {
+  #walkin-widget .form-row,
+  #walkin-widget .form-row--three {
     grid-template-columns: 1fr;
   }
 }
 
-.form-field {
+#walkin-widget .form-field {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 
-label {
+#walkin-widget label {
   font-size: 0.9rem;
   font-weight: 600;
   color: #333;
 }
 
-.required {
+#walkin-widget .required {
   color: #c0392b;
 }
 
 /* ── Inputs ── */
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="date"],
-select {
+#walkin-widget input[type="text"],
+#walkin-widget input[type="email"],
+#walkin-widget input[type="tel"],
+#walkin-widget input[type="date"],
+#walkin-widget select {
   width: 100%;
   padding: 0.85rem 1rem;
   font-size: 1.05rem;
@@ -155,19 +150,19 @@ select {
   transition: border-color 0.15s, box-shadow 0.15s;
   -webkit-appearance: none;
   appearance: none;
-  min-height: 54px; /* iPad touch target */
+  min-height: 54px;
   font-family: inherit;
 }
 
-input:focus,
-select:focus {
+#walkin-widget input:focus,
+#walkin-widget select:focus {
   border-color: #2563eb;
   background: #fff;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 /* ── Children Cards ── */
-.child-card {
+#walkin-widget .child-card {
   background: #f7f9fc;
   border: 1.5px solid #d1d9e0;
   border-radius: 10px;
@@ -175,20 +170,20 @@ select:focus {
   margin-bottom: 1rem;
 }
 
-.child-card-header {
+#walkin-widget .child-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.9rem;
 }
 
-.child-label {
+#walkin-widget .child-label {
   font-weight: 700;
   font-size: 1rem;
   color: #0a2342;
 }
 
-.remove-child-btn {
+#walkin-widget .remove-child-btn {
   background: none;
   border: 1.5px solid #c0392b;
   color: #c0392b;
@@ -202,12 +197,12 @@ select:focus {
   transition: background 0.15s;
 }
 
-.remove-child-btn:hover {
+#walkin-widget .remove-child-btn:hover {
   background: #fdf0ee;
 }
 
 /* ── Buttons ── */
-.btn {
+#walkin-widget .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -223,42 +218,42 @@ select:focus {
   text-decoration: none;
 }
 
-.btn--primary {
+#walkin-widget .btn--primary {
   background: #2563eb;
   color: #fff;
 }
 
-.btn--primary:hover:not(:disabled) {
+#walkin-widget .btn--primary:hover:not(:disabled) {
   background: #1d4ed8;
 }
 
-.btn--primary:disabled {
+#walkin-widget .btn--primary:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-.btn--secondary {
+#walkin-widget .btn--secondary {
   background: #fff;
   color: #2563eb;
   border: 2px solid #2563eb;
 }
 
-.btn--secondary:hover:not(:disabled) {
+#walkin-widget .btn--secondary:hover:not(:disabled) {
   background: #eff6ff;
 }
 
-.btn--secondary:disabled {
+#walkin-widget .btn--secondary:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-.btn--large {
+#walkin-widget .btn--large {
   width: 100%;
   font-size: 1.15rem;
   min-height: 60px;
 }
 
-.btn--add {
+#walkin-widget .btn--add {
   width: 100%;
   border: 2px dashed #2563eb;
   background: #f0f6ff;
@@ -266,11 +261,11 @@ select:focus {
   margin-top: 0.25rem;
 }
 
-.btn--add:hover:not(:disabled) {
+#walkin-widget .btn--add:hover:not(:disabled) {
   background: #dbeafe;
 }
 
-.btn--add:disabled {
+#walkin-widget .btn--add:disabled {
   border-color: #9ca3af;
   color: #9ca3af;
   background: #f9fafb;
@@ -278,12 +273,12 @@ select:focus {
 }
 
 /* ── Form Actions ── */
-.form-actions {
+#walkin-widget .form-actions {
   margin-top: 1.5rem;
 }
 
 /* ── Group Assignment Cards ── */
-.assignment-card {
+#walkin-widget .assignment-card {
   background: #fff;
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
@@ -294,28 +289,27 @@ select:focus {
   gap: 1.25rem;
 }
 
-.assignment-info {
+#walkin-widget .assignment-info {
   flex: 1;
 }
 
-.assignment-name {
+#walkin-widget .assignment-name {
   font-size: 1.2rem;
   font-weight: 700;
   color: #0a2342;
   margin-bottom: 0.3rem;
 }
 
-.assignment-details {
+#walkin-widget .assignment-details {
   font-size: 0.95rem;
   color: #555;
 }
 
-.assignment-group {
+#walkin-widget .assignment-group {
   min-width: 230px;
 }
 
-/* Custom dropdown arrow */
-.group-select {
+#walkin-widget .group-select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23555' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
@@ -323,19 +317,19 @@ select:focus {
 }
 
 @media (max-width: 560px) {
-  .assignment-card {
+  #walkin-widget .assignment-card {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .assignment-group {
+  #walkin-widget .assignment-group {
     width: 100%;
     min-width: unset;
   }
 }
 
 /* ── Loading / Error Messages ── */
-.loading-notice {
+#walkin-widget .loading-notice {
   padding: 1.25rem;
   text-align: center;
   color: #555;
@@ -345,7 +339,7 @@ select:focus {
   border: 1.5px dashed #d1d9e0;
 }
 
-.error-msg {
+#walkin-widget .error-msg {
   background: #fef2f2;
   border: 1.5px solid #fca5a5;
   color: #b91c1c;
@@ -357,7 +351,7 @@ select:focus {
 }
 
 /* ── Screen Reader Only ── */
-.sr-only {
+#walkin-widget .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -369,7 +363,7 @@ select:focus {
 }
 
 /* ── Thank You ── */
-.thankyou-card {
+#walkin-widget .thankyou-card {
   background: #fff;
   border-radius: 18px;
   padding: 3rem 2rem;
@@ -378,7 +372,7 @@ select:focus {
   margin-top: 2rem;
 }
 
-.thankyou-icon {
+#walkin-widget .thankyou-icon {
   width: 76px;
   height: 76px;
   background: #16a34a;
@@ -392,34 +386,34 @@ select:focus {
   margin: 0 auto 1.25rem;
 }
 
-.thankyou-card h1 {
+#walkin-widget .thankyou-card h1 {
   font-size: 2.1rem;
   font-weight: 800;
   color: #0a2342;
   margin-bottom: 0.85rem;
 }
 
-.thankyou-message {
+#walkin-widget .thankyou-message {
   font-size: 1.1rem;
   color: #333;
   line-height: 1.65;
   margin-bottom: 1.5rem;
 }
 
-.thankyou-message strong {
+#walkin-widget .thankyou-message strong {
   display: block;
   margin-top: 0.75rem;
   font-size: 1.2rem;
   color: #0a2342;
 }
 
-.thankyou-reset {
+#walkin-widget .thankyou-reset {
   font-size: 0.95rem;
   color: #777;
   margin-bottom: 1.75rem;
 }
 
-#countdown {
+#walkin-widget #countdown {
   font-weight: 700;
   color: #2563eb;
 }
