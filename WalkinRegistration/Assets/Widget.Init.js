@@ -509,7 +509,7 @@
     var householdId = householdResult[0].Household_ID;
 
     // 2. Create parent Contact
-    await mpPost("/tables/Contacts", [{
+    var parentResult = await mpPost("/tables/Contacts", [{
       First_Name:            parentData.firstName,
       Last_Name:             parentData.lastName,
       Display_Name:          parentData.lastName + ", " + parentData.firstName,
@@ -519,6 +519,10 @@
       Household_Position_ID: HOUSEHOLD_POSITION_HEAD,
       Company:               false
     }]);
+    var parentContactId = parentResult[0].Contact_ID;
+
+    // 2b. Create Participant record for parent (Visitor)
+    await ensureParticipant(parentContactId);
 
     // 3. Create child Contacts, then assign each to their selected group
     for (var i = 0; i < assignments.length; i++) {
