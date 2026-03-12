@@ -67,9 +67,11 @@
   // ── Config Load (groups + campus name) ────────────────────────────────
   async function loadConfig() {
     var locId  = getLocationId();
+    console.log("[WalkinReg] locationId from URL:", locId);
     var params = locId ? { CongregationID: locId } : {};
 
     var data = await skyApiCall("api_custom_WalkinReg_GetConfig", params);
+    console.log("[WalkinReg] GetConfig response:", JSON.stringify(data));
 
     // DataSet1: Kids Quest groups for the dropdown
     groups = data.DataSet1 || [];
