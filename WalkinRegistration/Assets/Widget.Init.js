@@ -13,7 +13,7 @@
   const HOUSEHOLD_POSITION_HEAD  = 1;
   const HOUSEHOLD_POSITION_CHILD = 2;
   const PARTICIPANT_TYPE_ID      = 22;  // Visitor
-  const GROUP_ROLE_ID            = 866; // Member
+  const GROUP_ROLE_ID            = 866; // Visitor
   let groups        = [];
   let parentData    = null;
   let childrenData  = [];
