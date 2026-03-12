@@ -12,10 +12,10 @@
   // MP reference data IDs
   const HOUSEHOLD_POSITION_HEAD  = 1;
   const HOUSEHOLD_POSITION_CHILD = 2;
-  const PARTICIPANT_TYPE_ID      = 4;
   const GROUP_ROLE_ID            = 16;
 
   // ── State ──────────────────────────────────────────────────────────────
+  let participantTypeId = null;  // looked up dynamically from Participant_Types table
   let groups        = [];
   let parentData    = null;
   let childrenData  = [];
@@ -39,12 +39,15 @@
     // Inject the widget HTML into the container
     root.innerHTML = buildWidgetHtml();
 
-    // Load groups and location name from MP
+    // Load config data from MP
     loadGroups().catch(function (err) {
       console.error("[WalkinReg] Failed to load groups:", err);
     });
     loadLocationName().catch(function (err) {
       console.error("[WalkinReg] Failed to load location name:", err);
+    });
+    loadParticipantType().catch(function (err) {
+      console.error("[WalkinReg] Failed to load participant type:", err);
     });
 
     setupStep1();
@@ -193,6 +196,17 @@
         el.textContent = data[0].Congregation_Name;
         el.hidden = false;
       }
+    }
+  }
+
+  // ── Participant Type ─────────────────────────────────────────────────
+  async function loadParticipantType() {
+    var data = await mpGet(
+      "/tables/Participant_Types?$select=Participant_Type_ID,Participant_Type&$orderby=Participant_Type_ID&$top=1"
+    );
+    if (data && data.length > 0) {
+      participantTypeId = data[0].Participant_Type_ID;
+      console.log("[WalkinReg] Using Participant_Type_ID:", participantTypeId);
     }
   }
 
@@ -473,7 +487,7 @@
 
     var created = await mpPost("/tables/Participants", [{
       Contact_ID:              contactId,
-      Participant_Type_ID:     PARTICIPANT_TYPE_ID,
+      Participant_Type_ID:     participantTypeId,
       Participant_Start_Date:  todayISO()
     }]);
     return created[0].Participant_ID;
