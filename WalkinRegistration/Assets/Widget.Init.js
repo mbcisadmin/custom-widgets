@@ -664,14 +664,15 @@
 
     // Add recipient via Communication_Messages table
     await mpPost("/tables/dp_Communication_Messages", [{
-      Communication_ID: communicationId,
-      Action_Status_ID: 1,
-      Contact_ID:       contactId,
-      From:             "kidsquest@mcleanbible.org",
-      To:               email,
-      Subject:          subject,
-      Body:             body,
-      Domain_ID:        1
+      Communication_ID:   communicationId,
+      Action_Status_ID:   1,
+      Action_Status_Time: new Date().toISOString(),
+      Contact_ID:         contactId,
+      From:               "kidsquest@mcleanbible.org",
+      To:                 email,
+      Subject:            subject,
+      Body:               body,
+      Domain_ID:          1
     }]);
     console.log("[WalkinReg] Welcome email queued for:", email);
   }
