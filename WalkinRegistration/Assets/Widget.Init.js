@@ -649,32 +649,67 @@
       "we\u2019d love to have your mailing address so we can keep you connected!</p>" +
       "<p>Blessings,<br />The Kids Quest Team</p>";
 
-    // Create communication record (From_Contact must be a valid Contact_ID)
-    var commResult = await mpPost("/tables/dp_Communications", [{
-      Author_User_ID:          1,
-      Subject:                 subject,
-      Body:                    body,
-      Domain_ID:               1,
-      Start_Date:              new Date().toISOString(),
+    // Use MP's Communications API (not raw table insert) to create + send
+    var headers = { "Content-Type": "application/json" };
+    var token = getToken();
+    if (token) headers.Authorization = "Bearer " + token;
+
+    var payload = {
       From_Contact:            contactId,
       Reply_to_Contact:        contactId,
-      Communication_Status_ID: 3
-    }]);
-    var communicationId = commResult[0].Communication_ID;
+      Subject:                 subject,
+      Body:                    body,
+      Author_User_ID:          1,
+      Start_Date:              new Date().toISOString(),
+      Communication_Status_ID: 3,
+      Domain_ID:               1,
+      Recipients: [
+        {
+          Contact_ID:         contactId,
+          To:                 email,
+          Action_Status_ID:   3,  // Sent
+          Action_Status_Time: new Date().toISOString()
+        }
+      ]
+    };
 
-    // Add recipient via Communication_Messages table
-    await mpPost("/tables/dp_Communication_Messages", [{
-      Communication_ID:   communicationId,
-      Action_Status_ID:   2,  // Ready to Send
-      Action_Status_Time: new Date().toISOString(),
-      Contact_ID:         contactId,
-      From:               "kidsquest@mcleanbible.org",
-      To:                 email,
-      Subject:            subject,
-      Body:               body,
-      Domain_ID:          1
-    }]);
-    console.log("[WalkinReg] Welcome email queued for:", email);
+    // Try the higher-level /communications endpoint first
+    var res = await fetch(MP_API + "/communications", {
+      method: "POST",
+      headers: headers,
+      credentials: "include",
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      // Fallback: create via table inserts with Sent status
+      console.log("[WalkinReg] /communications endpoint failed, using table fallback");
+      var commResult = await mpPost("/tables/dp_Communications", [{
+        Author_User_ID:          1,
+        Subject:                 subject,
+        Body:                    body,
+        Domain_ID:               1,
+        Start_Date:              new Date().toISOString(),
+        From_Contact:            contactId,
+        Reply_to_Contact:        contactId,
+        Communication_Status_ID: 3
+      }]);
+      var communicationId = commResult[0].Communication_ID;
+
+      await mpPost("/tables/dp_Communication_Messages", [{
+        Communication_ID:   communicationId,
+        Action_Status_ID:   3,  // Sent
+        Action_Status_Time: new Date().toISOString(),
+        Contact_ID:         contactId,
+        From:               "kidsquest@mcleanbible.org",
+        To:                 email,
+        Subject:            subject,
+        Body:               body,
+        Domain_ID:          1,
+        Sent:               true
+      }]);
+    }
+    console.log("[WalkinReg] Welcome email sent for:", email);
   }
 
   async function ensureParticipant(contactId) {
