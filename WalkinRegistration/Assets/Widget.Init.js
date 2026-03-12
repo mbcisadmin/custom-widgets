@@ -201,13 +201,23 @@
 
   // ── Participant Type ─────────────────────────────────────────────────
   async function loadParticipantType() {
-    var data = await mpGet(
-      "/tables/Participant_Types?$select=Participant_Type_ID,Participant_Type&$orderby=Participant_Type_ID&$top=1"
-    );
-    if (data && data.length > 0) {
-      participantTypeId = data[0].Participant_Type_ID;
-      console.log("[WalkinReg] Using Participant_Type_ID:", participantTypeId);
+    // Try both possible table names — MP instances vary
+    var tables = ["Participant_Types", "Participation_Types"];
+    for (var i = 0; i < tables.length; i++) {
+      try {
+        var data = await mpGet(
+          "/tables/" + tables[i] + "?$select=Participant_Type_ID&$orderby=Participant_Type_ID&$top=1"
+        );
+        if (data && data.length > 0) {
+          participantTypeId = data[0].Participant_Type_ID;
+          console.log("[WalkinReg] Using Participant_Type_ID:", participantTypeId, "from", tables[i]);
+          return;
+        }
+      } catch (e) {
+        console.log("[WalkinReg] Table " + tables[i] + " not found, trying next...");
+      }
     }
+    console.warn("[WalkinReg] Could not find participant types table");
   }
 
   // ── Utilities ──────────────────────────────────────────────────────────
