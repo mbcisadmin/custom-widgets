@@ -12,7 +12,8 @@
   // Child attributes — add/remove entries here as needed
   // Set hasNotes: true for attributes that need a free-text field (e.g. Allergies)
   const CHILD_ATTRIBUTES = [
-    { id: 283, label: "Allergies", icon: "\u26A0\uFE0F", hasNotes: true, notesPlaceholder: "List allergies\u2026" }
+    { id: 283, label: "Allergies", icon: "\u26A0\uFE0F", hasNotes: true, notesPlaceholder: "List allergies\u2026" },
+    { id: 391, label: "Potty Training", icon: "\uD83D\uDEBD" }
   ];
 
   // MP reference data IDs
