@@ -665,7 +665,7 @@
     // Add recipient via Communication_Messages table
     await mpPost("/tables/dp_Communication_Messages", [{
       Communication_ID:   communicationId,
-      Action_Status_ID:   1,
+      Action_Status_ID:   2,  // Ready to Send
       Action_Status_Time: new Date().toISOString(),
       Contact_ID:         contactId,
       From:               "kidsquest@mcleanbible.org",
