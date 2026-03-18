@@ -52,27 +52,24 @@
       return;
     }
 
-    // Don't display the widget at all if the user isn't authenticated
-    if (!getToken()) {
-      root.style.display = "none";
-      console.warn("[WalkinReg] No auth token found. Widget will not load.");
-      return;
-    }
-
-    // Inject the widget HTML into the container
+    // Hide widget until we confirm authentication via a successful API call
+    root.style.display = "none";
     root.innerHTML = buildWidgetHtml();
 
-    // Load config data from MP
-    loadGroups().catch(function (err) {
-      console.error("[WalkinReg] Failed to load groups:", err);
+    // Use loadGroups as the auth gate — if it succeeds, user is authenticated
+    loadGroups().then(function () {
+      root.style.display = "";
+      setupStep1();
+      setupStep2();
+      setupStep3();
+    }).catch(function (err) {
+      console.warn("[WalkinReg] Not authenticated or failed to load groups:", err);
+      root.innerHTML = "";
     });
+
     loadLocationName().catch(function (err) {
       console.error("[WalkinReg] Failed to load location name:", err);
     });
-
-    setupStep1();
-    setupStep2();
-    setupStep3();
   }
 
   // ── Widget HTML ──────────────────────────────────────────────────────
