@@ -52,6 +52,13 @@
       return;
     }
 
+    // Don't display the widget at all if the user isn't authenticated
+    if (!getToken()) {
+      root.style.display = "none";
+      console.warn("[WalkinReg] No auth token found. Widget will not load.");
+      return;
+    }
+
     // Inject the widget HTML into the container
     root.innerHTML = buildWidgetHtml();
 
@@ -187,9 +194,9 @@
 
   // ── Groups ─────────────────────────────────────────────────────────────
   async function loadGroups() {
-    var ids = GROUP_IDS.join(",");
+    var filter = GROUP_IDS.map(function (id) { return "Group_ID=" + id; }).join(" or ");
     var data = await mpGet(
-      "/tables/Groups?$select=Group_ID,Group_Name&$filter=Group_ID in (" + ids + ")&$orderby=Group_Name"
+      "/tables/Groups?$select=Group_ID,Group_Name&$filter=" + encodeURIComponent(filter) + "&$orderby=Group_Name"
     );
     groups = data || [];
   }
@@ -512,9 +519,11 @@
       console.log("[WalkinReg] Found existing contact:", parentContactId);
     } else {
       // 2a. Create Household
+      console.log("[WalkinReg] Creating household with parentData:", JSON.stringify(parentData));
       var householdResult = await mpPost("/tables/Households", [{
         Household_Name:  parentData.lastName,
-        Congregation_ID: congregationId
+        Congregation_ID: congregationId,
+        Domain_ID:       1
       }]);
       householdId = householdResult[0].Household_ID;
 
