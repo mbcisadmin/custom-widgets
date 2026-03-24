@@ -200,32 +200,29 @@
 
   // ── Form Structure Discovery ───────────────────────────────────────────
   async function loadFormStructure() {
-    // 1. Get the Opportunity record
+    // 1. Get the Opportunity title
     var opps = await mpGet(
-      "/tables/Opportunities?$select=Opportunity_ID,Opportunity_Title,Form_ID" +
+      "/tables/Opportunities?$select=Opportunity_ID,Opportunity_Title" +
       "&$filter=Opportunity_ID=" + opportunityId
     );
     if (!opps || opps.length === 0) throw new Error("Opportunity not found");
+    opportunityTitle = opps[0].Opportunity_Title || "Prayer Requests";
 
-    var opp = opps[0];
-    opportunityTitle = opp.Opportunity_Title || "Prayer Requests";
-    formId = opp.Form_ID;
+    // 2. Discover Form_ID through a sample Opportunity_Response → Form_Response
+    var sampleResp = await mpGet(
+      "/tables/Opportunity_Responses" +
+      "?$select=Opportunity_Response_ID,Form_Response_ID" +
+      "&$filter=Opportunity_ID=" + opportunityId +
+      "&$top=1"
+    );
+    console.log("[PrayerWidget] Sample Opportunity_Response:", JSON.stringify(sampleResp));
 
-    // 2. If Opportunity doesn't have Form_ID, discover it through responses
-    if (!formId) {
-      var sampleResp = await mpGet(
-        "/tables/Opportunity_Responses" +
-        "?$select=Opportunity_Response_ID,Form_Response_ID" +
-        "&$filter=Opportunity_ID=" + opportunityId +
-        "&$top=1"
+    if (sampleResp && sampleResp.length > 0 && sampleResp[0].Form_Response_ID) {
+      var fr = await mpGet(
+        "/tables/Form_Responses?$select=Form_ID" +
+        "&$filter=Form_Response_ID=" + sampleResp[0].Form_Response_ID
       );
-      if (sampleResp && sampleResp.length > 0 && sampleResp[0].Form_Response_ID) {
-        var fr = await mpGet(
-          "/tables/Form_Responses?$select=Form_ID" +
-          "&$filter=Form_Response_ID=" + sampleResp[0].Form_Response_ID
-        );
-        if (fr && fr.length > 0) formId = fr[0].Form_ID;
-      }
+      if (fr && fr.length > 0) formId = fr[0].Form_ID;
     }
     if (!formId) throw new Error("Could not determine Form for Opportunity " + opportunityId);
 
