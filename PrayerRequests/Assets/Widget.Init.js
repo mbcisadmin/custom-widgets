@@ -123,15 +123,14 @@
 
     if (!userId) throw new Error("No user id in token");
 
-    // Look up the user record (fetch all columns so we can discover the group field)
+    // Look up the user record with known-safe columns only
     var users = await mpGet(
-      "/tables/dp_Users?$filter=User_ID='" + encodeURIComponent(userId) + "'"
+      "/tables/dp_Users?$select=User_ID,User_Name,Display_Name,Contact_ID" +
+      "&$filter=User_ID='" + encodeURIComponent(userId) + "'"
     );
     if (!users || users.length === 0) throw new Error("User not found");
     var user = users[0];
-
-    // ── TEMP DEBUG: log all dp_Users fields so we can find the user-group column
-    console.log("[PrayerWidget] dp_Users record:", JSON.stringify(user, null, 2));
+    console.log("[PrayerWidget] dp_Users record:", JSON.stringify(user));
 
     // Get contact details (display name + email)
     var contacts = await mpGet(
@@ -143,7 +142,6 @@
     currentUser = {
       userId:      user.User_ID,
       contactId:   user.Contact_ID,
-      userRecord:  user,               // keep full record for debugging
       displayName: contact.Display_Name || user.Display_Name || user.User_Name,
       email:       contact.Email_Address || ""
     };
