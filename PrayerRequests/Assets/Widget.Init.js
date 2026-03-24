@@ -349,13 +349,12 @@
     try {
       var activities = await mpGet(
         "/tables/Activity_Log" +
-        "?$select=Activity_Log_ID,Contact_ID,Notes" +
+        "?$select=Activity_Log_ID,Contact_ID,Description" +
         "&$filter=Activity_Type='Prayer'" +
         " AND Contact_ID IN (" + uniqueIds.join(",") + ")"
       );
-      parsePrayerCounts(activities);
+      parsePrayerCounts(activities, "Description");
     } catch (e) {
-      // Fallback: try Contact_Log
       console.warn("[PrayerWidget] Activity_Log query failed, trying Contact_Log:", e.message);
       try {
         var logs = await mpGet(
@@ -363,17 +362,18 @@
           "?$select=Contact_Log_ID,Contact_ID,Notes" +
           "&$filter=Contact_ID IN (" + uniqueIds.join(",") + ")"
         );
-        parsePrayerCounts(logs);
+        parsePrayerCounts(logs, "Notes");
       } catch (e2) {
         console.warn("[PrayerWidget] Could not load prayer counts:", e2.message);
       }
     }
   }
 
-  function parsePrayerCounts(records) {
+  function parsePrayerCounts(records, notesField) {
     prayerCounts = {};
     (records || []).forEach(function (r) {
-      var match = (r.Notes || "").match(/\[FR:(\d+)\]/);
+      var text = r[notesField] || "";
+      var match = text.match(/\[FR:(\d+)\]/);
       if (match) {
         var id = parseInt(match[1], 10);
         prayerCounts[id] = (prayerCounts[id] || 0) + 1;
@@ -562,23 +562,23 @@
   }
 
   async function logPrayer(req, note) {
-    var notes = "[FR:" + req.formResponseId + "] Prayed for by " + currentUser.displayName;
-    if (note) notes += " — " + note;
+    var desc = "[FR:" + req.formResponseId + "] Prayed for by " + currentUser.displayName;
+    if (note) desc += " — " + note;
 
     try {
       await mpPost("/tables/Activity_Log", [{
-        Activity_Type: "Prayer",
-        Activity_Date: new Date().toISOString(),
-        Contact_ID:    req.contactId,
-        Notes:         notes
+        Activity_Type:  "Prayer",
+        Activity_Date:  new Date().toISOString(),
+        Contact_ID:     req.contactId,
+        Record_Name:    "Prayer for " + (req.name || "request"),
+        Description:    desc
       }]);
     } catch (e) {
       console.warn("[PrayerWidget] Activity_Log write failed, trying Contact_Log:", e.message);
-      // Fallback table
       await mpPost("/tables/Contact_Log", [{
-        Contact_ID: req.contactId,
-        Notes:      notes,
-        Log_Date:   new Date().toISOString()
+        Contact_ID:   req.contactId,
+        Notes:        desc,
+        Contact_Date: new Date().toISOString()
       }]);
     }
   }
