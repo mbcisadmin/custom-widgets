@@ -332,56 +332,36 @@
   // Each prayer action creates an Activity_Log entry with Activity_Type = 'Prayer'
   // and a tag [FR:{Form_Response_ID}] in the Notes so we can count per request.
   //
-  // If Activity_Log is not accessible, the widget falls back to Contact_Log.
+  // Prayer tracking uses Contact_Log — each prayer creates a journal entry
+  // on the requester's contact record with a [FR:{id}] tag for counting.
   //
   async function loadPrayerCounts() {
-    var frIds = requests
-      .map(function (r) { return r.formResponseId; })
-      .filter(Boolean);
-    if (frIds.length === 0) return;
-
-    // Build a LIKE filter for each Form_Response_ID tag
     var contactIds = requests
       .map(function (r) { return r.contactId; })
       .filter(Boolean);
     var uniqueIds = contactIds.filter(function (id, i, arr) { return arr.indexOf(id) === i; });
+    if (uniqueIds.length === 0) return;
 
     try {
-      var activities = await mpGet(
-        "/tables/Activity_Log" +
-        "?$select=Activity_Log_ID,Contact_ID,Description" +
-        "&$filter=Activity_Type='Prayer'" +
-        " AND Contact_ID IN (" + uniqueIds.join(",") + ")"
+      var logs = await mpGet(
+        "/tables/Contact_Log" +
+        "?$select=Contact_Log_ID,Contact_ID,Notes" +
+        "&$filter=Notes LIKE '%[FR:%' AND Contact_ID IN (" + uniqueIds.join(",") + ")"
       );
-      parsePrayerCounts(activities, "Description");
+      prayerCounts = {};
+      (logs || []).forEach(function (r) {
+        var match = (r.Notes || "").match(/\[FR:(\d+)\]/);
+        if (match) {
+          var id = parseInt(match[1], 10);
+          prayerCounts[id] = (prayerCounts[id] || 0) + 1;
+        }
+      });
+      requests.forEach(function (req) {
+        req.prayerCount = prayerCounts[req.formResponseId] || 0;
+      });
     } catch (e) {
-      console.warn("[PrayerWidget] Activity_Log query failed, trying Contact_Log:", e.message);
-      try {
-        var logs = await mpGet(
-          "/tables/Contact_Log" +
-          "?$select=Contact_Log_ID,Contact_ID,Notes" +
-          "&$filter=Contact_ID IN (" + uniqueIds.join(",") + ")"
-        );
-        parsePrayerCounts(logs, "Notes");
-      } catch (e2) {
-        console.warn("[PrayerWidget] Could not load prayer counts:", e2.message);
-      }
+      console.warn("[PrayerWidget] Could not load prayer counts:", e.message);
     }
-  }
-
-  function parsePrayerCounts(records, notesField) {
-    prayerCounts = {};
-    (records || []).forEach(function (r) {
-      var text = r[notesField] || "";
-      var match = text.match(/\[FR:(\d+)\]/);
-      if (match) {
-        var id = parseInt(match[1], 10);
-        prayerCounts[id] = (prayerCounts[id] || 0) + 1;
-      }
-    });
-    requests.forEach(function (req) {
-      req.prayerCount = prayerCounts[req.formResponseId] || 0;
-    });
   }
 
   // ── UI Rendering ───────────────────────────────────────────────────────
@@ -565,22 +545,12 @@
     var desc = "[FR:" + req.formResponseId + "] Prayed for by " + currentUser.displayName;
     if (note) desc += " — " + note;
 
-    try {
-      await mpPost("/tables/Activity_Log", [{
-        Activity_Type:  "Prayer",
-        Activity_Date:  new Date().toISOString(),
-        Contact_ID:     req.contactId,
-        Record_Name:    "Prayer for " + (req.name || "request"),
-        Description:    desc
-      }]);
-    } catch (e) {
-      console.warn("[PrayerWidget] Activity_Log write failed, trying Contact_Log:", e.message);
-      await mpPost("/tables/Contact_Log", [{
-        Contact_ID:   req.contactId,
-        Notes:        desc,
-        Contact_Date: new Date().toISOString()
-      }]);
-    }
+    await mpPost("/tables/Contact_Log", [{
+      Contact_ID:   req.contactId,
+      Notes:        desc,
+      Contact_Date: new Date().toISOString(),
+      Made_By:      currentUser.displayName
+    }]);
   }
 
   async function sendPrayerEmail(req, includeName, personalNote) {
