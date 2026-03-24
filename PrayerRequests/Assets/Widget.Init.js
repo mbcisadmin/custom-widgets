@@ -9,7 +9,6 @@
 
   // ── State ──────────────────────────────────────────────────────────────
   var currentUser     = null;       // { userId, contactId, displayName, email }
-  var opportunityId   = null;
   var opportunityTitle = "Prayer Requests";
   var formId          = null;
   var formFields      = [];         // [{ Form_Field_ID, Field_Label, Field_Order }]
@@ -200,40 +199,25 @@
 
   // ── Form Structure Discovery ───────────────────────────────────────────
   async function loadFormStructure() {
-    // 1. Get the Opportunity title
-    var opps = await mpGet(
-      "/tables/Opportunities?$select=Opportunity_ID,Opportunity_Title" +
-      "&$filter=Opportunity_ID=" + opportunityId
+    // 1. Get form title from Forms table
+    var forms = await mpGet(
+      "/tables/Forms?$select=Form_ID,Form_Title" +
+      "&$filter=Form_ID=" + formId
     );
-    if (!opps || opps.length === 0) throw new Error("Opportunity not found");
-    opportunityTitle = opps[0].Opportunity_Title || "Prayer Requests";
-
-    // 2. Discover Form_ID through a sample Opportunity_Response → Form_Response
-    var sampleResp = await mpGet(
-      "/tables/Opportunity_Responses" +
-      "?$select=Opportunity_Response_ID,Form_Response_ID" +
-      "&$filter=Opportunity_ID=" + opportunityId +
-      "&$top=1"
-    );
-    console.log("[PrayerWidget] Sample Opportunity_Response:", JSON.stringify(sampleResp));
-
-    if (sampleResp && sampleResp.length > 0 && sampleResp[0].Form_Response_ID) {
-      var fr = await mpGet(
-        "/tables/Form_Responses?$select=Form_ID" +
-        "&$filter=Form_Response_ID=" + sampleResp[0].Form_Response_ID
-      );
-      if (fr && fr.length > 0) formId = fr[0].Form_ID;
+    if (forms && forms.length > 0) {
+      opportunityTitle = forms[0].Form_Title || "Prayer Requests";
     }
-    if (!formId) throw new Error("Could not determine Form for Opportunity " + opportunityId);
 
-    // 3. Get form fields so we know what each answer means
+    // 2. Get form fields so we know what each answer means
     formFields = await mpGet(
       "/tables/Form_Fields?$select=Form_Field_ID,Field_Label,Field_Order" +
       "&$filter=Form_ID=" + formId +
       "&$orderby=Field_Order"
     ) || [];
 
-    // 4. Auto-detect the "name" and "request" fields by label keywords
+    console.log("[PrayerWidget] Form fields:", JSON.stringify(formFields));
+
+    // 3. Auto-detect the "name" and "request" fields by label keywords
     formFields.forEach(function (f) {
       var lbl = (f.Field_Label || "").toLowerCase();
       if (!nameFieldId && /\bname\b/.test(lbl)) {
@@ -256,30 +240,28 @@
       allLoaded  = false;
     }
 
-    // Fetch Opportunity_Responses (which link to Form_Responses)
-    var oppResps = await mpGet(
-      "/tables/Opportunity_Responses" +
-      "?$select=Opportunity_Response_ID,Contact_ID,Response_Date,Form_Response_ID,Closed" +
-      "&$filter=Opportunity_ID=" + opportunityId +
+    // Fetch Form_Responses directly by Form_ID
+    var formResps = await mpGet(
+      "/tables/Form_Responses" +
+      "?$select=Form_Response_ID,Contact_ID,Response_Date" +
+      "&$filter=Form_ID=" + formId +
       "&$orderby=Response_Date desc" +
       "&$top=" + PAGE_SIZE +
       "&$skip=" + pageOffset
     );
 
-    if (!oppResps || oppResps.length === 0) {
+    console.log("[PrayerWidget] Form_Responses count:", (formResps || []).length);
+
+    if (!formResps || formResps.length === 0) {
       allLoaded = true;
       renderRequests();
       return;
     }
-    if (oppResps.length < PAGE_SIZE) allLoaded = true;
-
-    // Collect Form_Response_IDs to fetch answers
-    var frIds = oppResps
-      .map(function (r) { return r.Form_Response_ID; })
-      .filter(Boolean);
+    if (formResps.length < PAGE_SIZE) allLoaded = true;
 
     // Fetch form-field answers in one call
-    var answerMap = {};  // { formResponseId: { fieldId: response } }
+    var frIds = formResps.map(function (r) { return r.Form_Response_ID; });
+    var answerMap = {};
     if (frIds.length > 0) {
       var answers = await mpGet(
         "/tables/Form_Response_Answers" +
@@ -293,7 +275,7 @@
     }
 
     // Fetch contact info (display name + email) for all requesters
-    var contactIds = oppResps
+    var contactIds = formResps
       .map(function (r) { return r.Contact_ID; })
       .filter(Boolean);
     var uniqueContactIds = contactIds.filter(function (id, i, arr) {
@@ -310,8 +292,8 @@
     }
 
     // Build request objects
-    oppResps.forEach(function (r) {
-      var ans     = (r.Form_Response_ID && answerMap[r.Form_Response_ID]) || {};
+    formResps.forEach(function (r) {
+      var ans     = answerMap[r.Form_Response_ID] || {};
       var contact = contactMap[r.Contact_ID] || {};
 
       // Gather any extra form fields beyond name & request
@@ -325,7 +307,6 @@
       });
 
       requests.push({
-        oppResponseId:  r.Opportunity_Response_ID,
         formResponseId: r.Form_Response_ID,
         contactId:      r.Contact_ID,
         contactEmail:   contact.Email_Address || "",
@@ -338,7 +319,7 @@
       });
     });
 
-    pageOffset += oppResps.length;
+    pageOffset += formResps.length;
 
     // Load prayer counts for all displayed contacts
     await loadPrayerCounts();
@@ -715,11 +696,11 @@
     }
     root.style.display = "none";
 
-    // Require opportunityId in URL
-    opportunityId = getUrlParam("opportunityId");
-    if (!opportunityId) {
+    // Require formId in URL
+    formId = getUrlParam("formId");
+    if (!formId) {
       root.innerHTML = '<div class="state-msg error">' +
-        'Missing <strong>opportunityId</strong> URL parameter.</div>';
+        'Missing <strong>formId</strong> URL parameter.</div>';
       root.style.display = "block";
       return;
     }
