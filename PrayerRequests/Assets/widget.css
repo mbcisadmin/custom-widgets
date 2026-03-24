@@ -1,0 +1,279 @@
+/* ── Reset & Base ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               Helvetica, Arial, sans-serif;
+  background: #f0f2f5;
+  color: #2d3748;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Widget Shell ─────────────────────────────────────────────────────── */
+#prayer-widget {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px 12px 80px;          /* bottom padding for mobile nav bars */
+  min-height: 100dvh;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 4px 14px;
+}
+
+.widget-header h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-refresh {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  color: #4a6fa5;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.btn-refresh:active { background: rgba(74,111,165,.12); }
+
+/* spinning state while refreshing */
+.btn-refresh.spinning { animation: spin .6s linear infinite; }
+
+/* ── Prayer Card ──────────────────────────────────────────────────────── */
+.prayer-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  transition: box-shadow .15s;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.requester-name {
+  font-weight: 600;
+  font-size: 1rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.request-date {
+  font-size: .78rem;
+  color: #a0aec0;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.request-text {
+  font-size: .93rem;
+  line-height: 1.55;
+  color: #4a5568;
+  margin-bottom: 12px;
+  white-space: pre-line;             /* preserve submitter line breaks */
+  word-break: break-word;
+}
+
+/* extra form fields shown under main request */
+.extra-fields {
+  font-size: .85rem;
+  color: #718096;
+  margin-bottom: 10px;
+}
+.extra-fields .field-row { margin-bottom: 4px; }
+.extra-fields .field-label { font-weight: 600; }
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.prayer-count {
+  font-size: .8rem;
+  color: #a0aec0;
+}
+
+.btn-pray {
+  background: #4a6fa5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 20px;
+  height: 40px;
+  min-width: 80px;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-pray:active { background: #3d5d8a; }
+
+/* ── Pray Panel (expands below card) ──────────────────────────────────── */
+.pray-panel {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: .9rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.toggle-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #4a6fa5;
+  flex-shrink: 0;
+}
+
+.pray-panel textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: .9rem;
+  font-family: inherit;
+  color: #2d3748;
+  resize: vertical;
+  min-height: 72px;
+  margin-bottom: 12px;
+  transition: border-color .15s;
+}
+.pray-panel textarea:focus {
+  outline: none;
+  border-color: #4a6fa5;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn-cancel {
+  background: #edf2f7;
+  color: #4a5568;
+  border: none;
+  border-radius: 8px;
+  padding: 0 16px;
+  height: 40px;
+  font-size: .88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-send {
+  background: #4a6fa5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 20px;
+  height: 40px;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-send:active { background: #3d5d8a; }
+.btn-send:disabled { background: #a0aec0; cursor: not-allowed; }
+
+/* ── Load More ────────────────────────────────────────────────────────── */
+.load-more-wrap {
+  text-align: center;
+  padding: 12px 0 4px;
+}
+
+.btn-load-more {
+  background: transparent;
+  border: 2px solid #4a6fa5;
+  color: #4a6fa5;
+  border-radius: 8px;
+  padding: 0 28px;
+  height: 42px;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.btn-load-more:active { background: #4a6fa5; color: #fff; }
+
+/* ── States (loading / empty / error) ─────────────────────────────────── */
+.state-msg {
+  text-align: center;
+  padding: 48px 24px;
+  color: #a0aec0;
+  font-size: .95rem;
+  line-height: 1.6;
+}
+.state-msg.error { color: #e53e3e; }
+
+.spinner {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #4a6fa5;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toast ────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2d3748;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: .88rem;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity .25s;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+.toast.error { background: #e53e3e; }
+.toast.fade  { opacity: 0; }
+
+/* ── Responsive Tweaks ────────────────────────────────────────────────── */
+@media (min-width: 480px) {
+  #prayer-widget { padding: 24px 16px 80px; }
+  .widget-header h1 { font-size: 1.35rem; }
+  .prayer-card { padding: 20px; }
+}
