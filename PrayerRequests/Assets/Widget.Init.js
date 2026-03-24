@@ -549,7 +549,7 @@
       Contact_ID:   req.contactId,
       Notes:        desc,
       Contact_Date: new Date().toISOString(),
-      Made_By:      currentUser.displayName
+      Made_By:      currentUser.contactId
     }]);
   }
 
