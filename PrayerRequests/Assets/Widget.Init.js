@@ -3,7 +3,7 @@
 
   // ── Configuration ──────────────────────────────────────────────────────
   var MP_API   = "https://my.mcleanbible.org/ministryplatformapi";
-  var AUTH_USER_GROUP_ID = 49;      // Security Role ID that grants access
+  var AUTH_ROLE_ID     = 152;       // Security Role ID that grants access
   var PRAYER_FROM     = "prayer@mcleanbible.org";
   var PAGE_SIZE       = 20;
 
@@ -185,10 +185,10 @@
       var roles = await mpGet(
         "/tables/dp_User_Roles?$select=User_Role_ID,Role_ID" +
         "&$filter=User_ID='" + encodeURIComponent(currentUser.userId) + "'" +
-        " AND Role_ID=" + AUTH_USER_GROUP_ID
+        " AND Role_ID=" + AUTH_ROLE_ID
       );
       var authorized = roles && roles.length > 0;
-      console.log("[PrayerWidget] Auth check (Role " + AUTH_USER_GROUP_ID + "):", authorized);
+      console.log("[PrayerWidget] Auth check (Role " + AUTH_ROLE_ID + "):", authorized);
       return authorized;
     } catch (e) {
       console.warn("[PrayerWidget] dp_User_Roles check failed:", e.message);
