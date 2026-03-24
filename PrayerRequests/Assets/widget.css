@@ -59,6 +59,7 @@ body {
   padding: 16px;
   margin-bottom: 10px;
   box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  border-left: 4px solid #4a6fa5;
   transition: box-shadow .15s;
 }
 
@@ -134,8 +135,10 @@ body {
 /* ── Pray Panel (expands below card) ──────────────────────────────────── */
 .pray-panel {
   margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid #e2e8f0;
+  padding: 14px;
+  background: #f7f8fa;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .toggle-row {
