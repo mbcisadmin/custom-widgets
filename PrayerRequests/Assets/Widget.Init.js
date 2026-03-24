@@ -285,7 +285,7 @@
     var contactMap = {};
     if (uniqueContactIds.length > 0) {
       var contacts = await mpGet(
-        "/tables/Contacts?$select=Contact_ID,Display_Name,Email_Address" +
+        "/tables/Contacts?$select=Contact_ID,Display_Name,Nickname,First_Name,Email_Address" +
         "&$filter=Contact_ID IN (" + uniqueContactIds.join(",") + ")"
       );
       (contacts || []).forEach(function (c) { contactMap[c.Contact_ID] = c; });
@@ -311,6 +311,7 @@
         contactId:      r.Contact_ID,
         contactEmail:   contact.Email_Address || "",
         contactName:    contact.Display_Name || "",
+        firstName:      contact.Nickname || contact.First_Name || "",
         name:           ans[nameFieldId] || contact.Display_Name || "Anonymous",
         requestText:    ans[requestFieldId] || "",
         extras:         extras,
@@ -540,7 +541,7 @@
     var subject = "[FR:" + req.formResponseId + "] " + senderLabel + " has prayed for you";
 
     var body =
-      "<p>Dear " + escHtml(req.contactName || req.name) + ",</p>" +
+      "<p>Dear " + escHtml(req.firstName || req.contactName || req.name) + ",</p>" +
       "<p>" + escHtml(senderLabel) +
       " at McLean Bible Church has lifted your prayer request up to God.</p>";
 
