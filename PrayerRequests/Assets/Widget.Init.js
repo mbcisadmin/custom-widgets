@@ -3,7 +3,7 @@
 
   // ── Configuration ──────────────────────────────────────────────────────
   var MP_API   = "https://my.mcleanbible.org/ministryplatformapi";
-  var AUTH_USER_GROUP_ID = 49;      // dp_User_Groups ID that grants access
+  var AUTH_USER_GROUP_ID = 49;      // Security Role ID that grants access
   var PRAYER_FROM     = "prayer@mcleanbible.org";
   var PAGE_SIZE       = 20;
 
@@ -117,41 +117,85 @@
     var claims = decodeJwt(token);
     if (!claims) throw new Error("Invalid token");
 
-    // Try MP-specific claims first, then standard OIDC
-    var userId = claims["http://www.thinkministry.com/dataplatform/claims/userid"]
-              || claims.userid || claims.sub;
+    // Log claims so we can see what's available
+    console.log("[PrayerWidget] JWT claims:", JSON.stringify(claims, null, 2));
 
+    // Try to get Contact_ID directly from claims (avoids dp_Users query entirely)
+    var contactId = claims["http://www.thinkministry.com/dataplatform/claims/contactid"]
+                 || claims.contactid;
+    var userId    = claims["http://www.thinkministry.com/dataplatform/claims/userid"]
+                 || claims.userid || claims.sub;
+
+    // If we have Contact_ID from claims, go straight to Contacts table
+    if (contactId) {
+      var contacts = await mpGet(
+        "/tables/Contacts?$select=Contact_ID,Display_Name,Email_Address" +
+        "&$filter=Contact_ID=" + contactId
+      );
+      var contact = (contacts && contacts.length > 0) ? contacts[0] : {};
+      currentUser = {
+        userId:      userId,
+        contactId:   parseInt(contactId, 10),
+        displayName: contact.Display_Name || claims.name || "",
+        email:       contact.Email_Address || ""
+      };
+      console.log("[PrayerWidget] User loaded via claims:", currentUser.displayName);
+      return;
+    }
+
+    // Fallback: look up Contact_ID through dp_Users (filter by User_Name if GUID filter fails)
     if (!userId) throw new Error("No user id in token");
+    var userName = claims["http://www.thinkministry.com/dataplatform/claims/username"]
+               || claims.preferred_username || claims.name;
 
-    // Look up the user record with known-safe columns only
-    var users = await mpGet(
-      "/tables/dp_Users?$select=User_ID,User_Name,Display_Name,Contact_ID" +
-      "&$filter=User_ID='" + encodeURIComponent(userId) + "'"
-    );
+    var users;
+    if (userName) {
+      users = await mpGet(
+        "/tables/dp_Users?$select=User_ID,Display_Name,Contact_ID" +
+        "&$filter=User_Name='" + encodeURIComponent(userName) + "'"
+      );
+    }
+    if (!users || users.length === 0) {
+      users = await mpGet(
+        "/tables/dp_Users?$select=User_ID,Display_Name,Contact_ID" +
+        "&$filter=User_ID='" + encodeURIComponent(userId) + "'"
+      );
+    }
     if (!users || users.length === 0) throw new Error("User not found");
     var user = users[0];
-    console.log("[PrayerWidget] dp_Users record:", JSON.stringify(user));
 
-    // Get contact details (display name + email)
-    var contacts = await mpGet(
+    var contacts2 = await mpGet(
       "/tables/Contacts?$select=Contact_ID,Display_Name,Email_Address" +
       "&$filter=Contact_ID=" + user.Contact_ID
     );
-    var contact = (contacts && contacts.length > 0) ? contacts[0] : {};
+    var c = (contacts2 && contacts2.length > 0) ? contacts2[0] : {};
 
     currentUser = {
       userId:      user.User_ID,
       contactId:   user.Contact_ID,
-      displayName: contact.Display_Name || user.Display_Name || user.User_Name,
-      email:       contact.Email_Address || ""
+      displayName: c.Display_Name || user.Display_Name || "",
+      email:       c.Email_Address || ""
     };
+    console.log("[PrayerWidget] User loaded via dp_Users:", currentUser.displayName);
   }
 
   async function checkAuthorization() {
-    // ── TEMP: skip group check while we discover the correct field name
-    // TODO: re-enable once we know the dp_User_Groups column
-    console.log("[PrayerWidget] Auth check temporarily bypassed for debugging");
-    return true;
+    // Check if user has Security Role ID matching AUTH_ROLE_ID
+    try {
+      var roles = await mpGet(
+        "/tables/dp_User_Roles?$select=User_Role_ID,Role_ID" +
+        "&$filter=User_ID='" + encodeURIComponent(currentUser.userId) + "'" +
+        " AND Role_ID=" + AUTH_USER_GROUP_ID
+      );
+      var authorized = roles && roles.length > 0;
+      console.log("[PrayerWidget] Auth check (Role " + AUTH_USER_GROUP_ID + "):", authorized);
+      return authorized;
+    } catch (e) {
+      console.warn("[PrayerWidget] dp_User_Roles check failed:", e.message);
+      // TEMP: bypass auth so we can test the rest of the widget
+      console.log("[PrayerWidget] Auth bypassed due to error — fix before production");
+      return true;
+    }
   }
 
   // ── Form Structure Discovery ───────────────────────────────────────────
