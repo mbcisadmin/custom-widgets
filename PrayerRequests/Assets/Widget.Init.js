@@ -3,7 +3,7 @@
 
   // ── Configuration ──────────────────────────────────────────────────────
   var MP_API   = "https://my.mcleanbible.org/ministryplatformapi";
-  var AUTH_GROUP_ID    = 49;        // Group_ID that grants access to this widget
+  var AUTH_USER_GROUP_ID = 49;      // dp_User_Groups ID that grants access
   var PRAYER_FROM     = "prayer@mcleanbible.org";
   var PAGE_SIZE       = 20;
 
@@ -123,9 +123,9 @@
 
     if (!userId) throw new Error("No user id in token");
 
-    // Look up the user record to get Contact_ID
+    // Look up the user record — include User_Group_ID for authorization check
     var users = await mpGet(
-      "/tables/dp_Users?$select=User_ID,User_Name,Display_Name,Contact_ID" +
+      "/tables/dp_Users?$select=User_ID,User_Name,Display_Name,Contact_ID,User_Group_ID" +
       "&$filter=User_ID=" + encodeURIComponent(userId)
     );
     if (!users || users.length === 0) throw new Error("User not found");
@@ -141,26 +141,15 @@
     currentUser = {
       userId:      user.User_ID,
       contactId:   user.Contact_ID,
+      userGroupId: user.User_Group_ID,
       displayName: contact.Display_Name || user.Display_Name || user.User_Name,
       email:       contact.Email_Address || ""
     };
   }
 
-  async function checkAuthorization() {
-    // Get participant record for this contact
-    var parts = await mpGet(
-      "/tables/Participants?$select=Participant_ID" +
-      "&$filter=Contact_ID=" + currentUser.contactId
-    );
-    if (!parts || parts.length === 0) return false;
-
-    // Check if participant is in the auth group
-    var gp = await mpGet(
-      "/tables/Group_Participants?$select=Group_Participant_ID" +
-      "&$filter=Group_ID=" + AUTH_GROUP_ID +
-      " AND Participant_ID=" + parts[0].Participant_ID
-    );
-    return gp && gp.length > 0;
+  function checkAuthorization() {
+    // Verify the logged-in user belongs to dp_User_Groups ID 49
+    return currentUser.userGroupId === AUTH_USER_GROUP_ID;
   }
 
   // ── Form Structure Discovery ───────────────────────────────────────────
