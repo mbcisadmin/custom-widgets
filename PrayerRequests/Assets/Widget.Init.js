@@ -332,25 +332,24 @@
   // Each prayer action creates an Activity_Log entry with Activity_Type = 'Prayer'
   // and a tag [FR:{Form_Response_ID}] in the Notes so we can count per request.
   //
-  // Prayer tracking uses Contact_Log — each prayer creates a journal entry
-  // on the requester's contact record with a [FR:{id}] tag for counting.
+  // Prayer tracking uses the Communications system — each prayer sends an
+  // email via /messages and patches it to the contact record, just like
+  // WalkinRegistration. The [FR:{id}] tag in the subject lets us count.
   //
   async function loadPrayerCounts() {
-    var contactIds = requests
-      .map(function (r) { return r.contactId; })
-      .filter(Boolean);
-    var uniqueIds = contactIds.filter(function (id, i, arr) { return arr.indexOf(id) === i; });
-    if (uniqueIds.length === 0) return;
+    var frIds = requests.map(function (r) { return r.formResponseId; }).filter(Boolean);
+    if (frIds.length === 0) return;
 
+    prayerCounts = {};
     try {
-      var logs = await mpGet(
-        "/tables/Contact_Log" +
-        "?$select=Contact_Log_ID,Contact_ID,Notes" +
-        "&$filter=Notes LIKE '%[FR:%' AND Contact_ID IN (" + uniqueIds.join(",") + ")"
+      // Query dp_Communications for prayer emails by subject tag
+      var comms = await mpGet(
+        "/tables/dp_Communications" +
+        "?$select=Communication_ID,Subject" +
+        "&$filter=Subject LIKE '%[FR:%'"
       );
-      prayerCounts = {};
-      (logs || []).forEach(function (r) {
-        var match = (r.Notes || "").match(/\[FR:(\d+)\]/);
+      (comms || []).forEach(function (c) {
+        var match = (c.Subject || "").match(/\[FR:(\d+)\]/);
         if (match) {
           var id = parseInt(match[1], 10);
           prayerCounts[id] = (prayerCounts[id] || 0) + 1;
@@ -360,6 +359,7 @@
         req.prayerCount = prayerCounts[req.formResponseId] || 0;
       });
     } catch (e) {
+      // If dp_Communications isn't accessible, counts stay at 0 — not critical
       console.warn("[PrayerWidget] Could not load prayer counts:", e.message);
     }
   }
@@ -510,17 +510,10 @@
     sendBtn.textContent = "Sending\u2026";
 
     try {
-      // 1. Log the prayer in MP
-      await logPrayer(req, personalNote);
+      // Send prayer email and record it on the contact (same pattern as WalkinRegistration)
+      await sendPrayerEmail(req, includeName, personalNote);
 
-      // 2. Send email notification (skip if no email on file)
-      var emailSent = false;
-      if (req.contactEmail) {
-        await sendPrayerEmail(req, includeName, personalNote);
-        emailSent = true;
-      }
-
-      // 3. Update card UI
+      // Update card UI
       req.prayerCount++;
       var countEl = document.getElementById("count-" + req.formResponseId);
       if (countEl) {
@@ -529,9 +522,7 @@
       }
 
       closePrayPanel(req.formResponseId);
-      showToast(emailSent
-        ? "Prayer recorded & notification sent!"
-        : "Prayer recorded (no email on file).");
+      showToast("Prayer sent!");
     } catch (err) {
       console.error("[PrayerWidget] sendPrayer failed:", err);
       showToast("Something went wrong. Please try again.", true);
@@ -541,24 +532,12 @@
     }
   }
 
-  async function logPrayer(req, note) {
-    var desc = "[FR:" + req.formResponseId + "] Prayed for by " + currentUser.displayName;
-    if (note) desc += " — " + note;
-
-    await mpPost("/tables/Contact_Log", [{
-      Contact_ID:   req.contactId,
-      Notes:        desc,
-      Contact_Date: new Date().toISOString(),
-      Made_By:      currentUser.contactId
-    }]);
-  }
-
   async function sendPrayerEmail(req, includeName, personalNote) {
     var senderLabel = includeName
       ? currentUser.displayName
       : "Someone from our prayer team";
 
-    var subject = senderLabel + " has prayed for you";
+    var subject = "[FR:" + req.formResponseId + "] " + senderLabel + " has prayed for you";
 
     var body =
       "<p>Dear " + escHtml(req.name) + ",</p>" +
