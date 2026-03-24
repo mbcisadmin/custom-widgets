@@ -306,14 +306,23 @@
         }
       });
 
+      // If name and request detected the same field, use contact name instead
+      var nameVal = ans[nameFieldId] || "";
+      var reqVal  = ans[requestFieldId] || "";
+      if (nameFieldId === requestFieldId || !nameVal) {
+        nameVal = contact.Display_Name || "Anonymous";
+      }
+      // Don't repeat the same text for both name and request
+      if (reqVal === nameVal) reqVal = "";
+
       requests.push({
         formResponseId: r.Form_Response_ID,
         contactId:      r.Contact_ID,
         contactEmail:   contact.Email_Address || "",
         contactName:    contact.Display_Name || "",
         firstName:      contact.Nickname || contact.First_Name || "",
-        name:           ans[nameFieldId] || contact.Display_Name || "Anonymous",
-        requestText:    ans[requestFieldId] || "",
+        name:           nameVal,
+        requestText:    reqVal,
         extras:         extras,
         date:           r.Response_Date,
         prayerCount:    0
@@ -439,7 +448,7 @@
           '<span id="count-' + req.formResponseId + '">' + badgeHtml + '</span>' +
         '</div>' +
         '<span class="requester-name">' + escHtml(req.name) + '</span>' +
-        '<div class="request-text">' + escHtml(req.requestText) + '</div>' +
+        (req.requestText ? '<div class="request-text">' + escHtml(req.requestText) + '</div>' : '') +
         extrasHtml +
         '<div class="card-actions">' +
           '<button class="btn-pray" data-idx="' + idx + '">' +
