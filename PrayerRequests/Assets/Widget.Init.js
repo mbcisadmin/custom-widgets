@@ -126,7 +126,7 @@
     // Look up the user record — include User_Group_ID for authorization check
     var users = await mpGet(
       "/tables/dp_Users?$select=User_ID,User_Name,Display_Name,Contact_ID,User_Group_ID" +
-      "&$filter=User_ID=" + encodeURIComponent(userId)
+      "&$filter=User_ID='" + encodeURIComponent(userId) + "'"
     );
     if (!users || users.length === 0) throw new Error("User not found");
     var user = users[0];
