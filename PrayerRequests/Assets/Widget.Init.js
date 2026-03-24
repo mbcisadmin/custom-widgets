@@ -370,14 +370,22 @@
     var root = document.getElementById("prayer-widget");
     root.innerHTML =
       '<div class="widget-header">' +
+        '<div class="header-label">Our Community</div>' +
         '<h1 id="widget-title">' + escHtml(opportunityTitle) + '</h1>' +
-        '<button class="btn-refresh" id="btn-refresh" title="Refresh">&#x21bb;</button>' +
+        '<p class="header-subtitle">Enter into the quiet space of our community\'s needs. Together, we lift these burdens and celebrations before the Throne of Grace.</p>' +
+        '<div class="header-actions">' +
+          '<button class="btn-refresh" id="btn-refresh" title="Refresh">' +
+            '<span class="material-symbols-outlined">refresh</span> Refresh' +
+          '</button>' +
+        '</div>' +
       '</div>' +
       '<div id="requests-container">' +
         '<div class="state-msg"><div class="spinner"></div>Loading prayer requests&hellip;</div>' +
       '</div>' +
       '<div id="load-more" class="load-more-wrap" style="display:none;">' +
-        '<button class="btn-load-more" id="btn-load-more">Load More</button>' +
+        '<button class="btn-load-more" id="btn-load-more">' +
+          '<span class="material-symbols-outlined">expand_more</span> Load More' +
+        '</button>' +
       '</div>';
 
     document.getElementById("btn-refresh").addEventListener("click", refreshAll);
@@ -415,16 +423,29 @@
         ? "Prayed for " + req.prayerCount + " time" + (req.prayerCount !== 1 ? "s" : "")
         : "";
 
+      var badgeHtml = countText
+        ? '<div class="prayer-badge">' +
+            '<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1;">front_hand</span>' +
+            '<span>' + countText + '</span>' +
+          '</div>'
+        : '';
+
       card.innerHTML =
-        '<div class="card-header">' +
-          '<span class="requester-name">' + escHtml(req.name) + '</span>' +
-          '<span class="request-date">' + formatDate(req.date) + '</span>' +
+        '<div class="card-meta">' +
+          '<div class="card-date">' +
+            '<div class="pulse-dot"></div>' +
+            '<span class="date-text">' + formatDate(req.date) + '</span>' +
+          '</div>' +
+          '<span id="count-' + req.formResponseId + '">' + badgeHtml + '</span>' +
         '</div>' +
+        '<span class="requester-name">' + escHtml(req.name) + '</span>' +
         '<div class="request-text">' + escHtml(req.requestText) + '</div>' +
         extrasHtml +
-        '<div class="card-footer">' +
-          '<span class="prayer-count" id="count-' + req.formResponseId + '">' + countText + '</span>' +
-          '<button class="btn-pray" data-idx="' + idx + '">Pray</button>' +
+        '<div class="card-actions">' +
+          '<button class="btn-pray" data-idx="' + idx + '">' +
+            '<span class="material-symbols-outlined">front_hand</span>' +
+            'I Prayed for This' +
+          '</button>' +
         '</div>' +
         '<div class="pray-panel" id="panel-' + req.formResponseId + '" style="display:none;">' +
           '<label class="toggle-row">' +
@@ -456,7 +477,7 @@
 
   // ── Delegated Click Handler ────────────────────────────────────────────
   function handleCardClick(e) {
-    var target = e.target;
+    var target = e.target.closest("button") || e.target;
 
     // "Pray" button
     if (target.classList.contains("btn-pray")) {
@@ -514,12 +535,16 @@
       // Send prayer email and record it on the contact (same pattern as WalkinRegistration)
       await sendPrayerEmail(req, includeName, personalNote);
 
-      // Update card UI
+      // Update card UI with badge
       req.prayerCount++;
       var countEl = document.getElementById("count-" + req.formResponseId);
       if (countEl) {
-        countEl.textContent = "Prayed for " + req.prayerCount +
-          " time" + (req.prayerCount !== 1 ? "s" : "");
+        var ct = "Prayed for " + req.prayerCount + " time" + (req.prayerCount !== 1 ? "s" : "");
+        countEl.innerHTML =
+          '<div class="prayer-badge">' +
+            '<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1;">front_hand</span>' +
+            '<span>' + ct + '</span>' +
+          '</div>';
       }
 
       closePrayPanel(req.formResponseId);
