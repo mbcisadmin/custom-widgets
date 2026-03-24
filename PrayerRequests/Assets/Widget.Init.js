@@ -540,7 +540,7 @@
     var subject = "[FR:" + req.formResponseId + "] " + senderLabel + " has prayed for you";
 
     var body =
-      "<p>Dear " + escHtml(req.name) + ",</p>" +
+      "<p>Dear " + escHtml(req.contactName || req.name) + ",</p>" +
       "<p>" + escHtml(senderLabel) +
       " at McLean Bible Church has lifted your prayer request up to God.</p>";
 
@@ -549,9 +549,7 @@
         escHtml(personalNote) + "\"</p>";
     }
 
-    body +=
-      "<p>You are not alone \u2014 we are with you in prayer.</p>" +
-      "<p>Blessings,<br/>McLean Bible Church Prayer Team</p>";
+    body += "<p>Blessings,<br/>McLean Bible Church Prayer Team</p>";
 
     var messagePayload = {
       FromAddress:    { DisplayName: "MBC Prayer Team", Address: PRAYER_FROM },
