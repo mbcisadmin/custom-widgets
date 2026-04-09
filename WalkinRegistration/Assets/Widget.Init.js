@@ -4,9 +4,6 @@
   // ── Configuration ──────────────────────────────────────────────────────
   const MP_API = "https://my.mcleanbible.org/ministryplatformapi";
 
-  // Kids Quest group IDs — update here if groups change
-  const GROUP_IDS = [53012, 53013, 53014, 53015, 53016, 53017, 53018, 53019, 53020, 53021, 53022, 53023];
-
   const MAX_CHILDREN = 10;
 
   // Child attributes — add/remove entries here as needed
@@ -27,12 +24,17 @@
     { id: 205, label: "EpiPen",          icon: "\u2757",     hasNotes: true, notesPlaceholder: "EpiPen details\u2026" }
   ];
 
+  const US_STATES = [
+    "AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN",
+    "IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH",
+    "NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT",
+    "VT","VA","WA","WV","WI","WY"
+  ];
+
   // MP reference data IDs
   const HOUSEHOLD_POSITION_HEAD  = 1;
   const HOUSEHOLD_POSITION_CHILD = 2;
   const PARTICIPANT_TYPE_ID      = 22;  // Visitor
-  const GROUP_ROLE_ID            = 866; // Visitor
-  let groups        = [];
   let parentData    = null;
   let childrenData  = [];
   let childSeq      = 0;
@@ -56,14 +58,13 @@
     root.style.display = "none";
     root.innerHTML = buildWidgetHtml();
 
-    // Use loadGroups as the auth gate — if it succeeds, user is authenticated
-    loadGroups().then(function () {
+    // Auth gate — a successful API call confirms the user is authenticated
+    mpGet("/tables/Contacts?$select=Contact_ID&$top=1").then(function () {
       root.style.display = "";
       setupStep1();
-      setupStep2();
-      setupStep3();
+      setupConfirmation();
     }).catch(function (err) {
-      console.warn("[WalkinReg] Not authenticated or failed to load groups:", err);
+      console.warn("[WalkinReg] Not authenticated:", err);
       root.innerHTML = "";
     });
 
@@ -107,6 +108,38 @@
             '</div>' +
           '</div>' +
           '<div class="section-card">' +
+            '<h2 class="section-title">Mailing Address</h2>' +
+            '<div class="form-row">' +
+              '<div class="form-field" style="grid-column: 1 / -1;">' +
+                '<label for="addr-line1">Address Line 1 <span class="required" aria-hidden="true">*</span></label>' +
+                '<input type="text" id="addr-line1" required autocomplete="off" inputmode="text" placeholder="Street address" />' +
+              '</div>' +
+            '</div>' +
+            '<div class="form-row">' +
+              '<div class="form-field" style="grid-column: 1 / -1;">' +
+                '<label for="addr-line2">Address Line 2</label>' +
+                '<input type="text" id="addr-line2" autocomplete="off" inputmode="text" placeholder="Apt, suite, unit, etc. (optional)" />' +
+              '</div>' +
+            '</div>' +
+            '<div class="form-row form-row--three">' +
+              '<div class="form-field">' +
+                '<label for="addr-city">City <span class="required" aria-hidden="true">*</span></label>' +
+                '<input type="text" id="addr-city" required autocomplete="off" inputmode="text" placeholder="City" />' +
+              '</div>' +
+              '<div class="form-field">' +
+                '<label for="addr-state">State <span class="required" aria-hidden="true">*</span></label>' +
+                '<select id="addr-state" required>' +
+                  '<option value="">\u2014 Select \u2014</option>' +
+                  US_STATES.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join("") +
+                '</select>' +
+              '</div>' +
+              '<div class="form-field">' +
+                '<label for="addr-zip">ZIP Code <span class="required" aria-hidden="true">*</span></label>' +
+                '<input type="text" id="addr-zip" required autocomplete="off" inputmode="numeric" placeholder="ZIP" maxlength="10" />' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="section-card">' +
             '<h2 class="section-title">Children</h2>' +
             '<div id="children-container"></div>' +
             '<button type="button" id="add-child-btn" class="btn btn--secondary btn--add">+ Add Another Child</button>' +
@@ -118,33 +151,16 @@
         '</form>' +
       '</section>' +
 
-      '<!-- Step 2: Volunteer Group Assignment -->' +
+      '<!-- Step 2: Confirmation -->' +
       '<section id="step-2" class="step" hidden>' +
-        '<div class="step-header step-header--volunteer">' +
-          '<div class="handoff-badge">Volunteer Action Required</div>' +
-          '<h1>Assign Children to Groups</h1>' +
-          '<p class="step-subtitle">Please take the iPad back from the parent and assign each child to the correct group.</p>' +
-        '</div>' +
-        '<form id="assign-form">' +
-          '<div id="group-assignment-container"></div>' +
-          '<div id="step2-error" class="error-msg" hidden></div>' +
-          '<div class="form-actions">' +
-            '<button type="submit" id="assign-submit-btn" class="btn btn--primary btn--large">Complete Registration</button>' +
-          '</div>' +
-        '</form>' +
-      '</section>' +
-
-      '<!-- Step 3: Thank You -->' +
-      '<section id="step-3" class="step" hidden>' +
         '<div class="thankyou-card">' +
           '<div class="thankyou-icon" aria-hidden="true">&#10003;</div>' +
           '<h1>Registration Complete!</h1>' +
           '<p class="thankyou-message">' +
-            'Your family has been registered for Kids Quest.<br />' +
-            '<strong>Please proceed to the check-in station to check in your children.</strong>' +
+            'Thank you! Please see an attendant for next steps.' +
           '</p>' +
           '<p class="thankyou-reset">' +
-            'This form will reset automatically in <span id="countdown">30</span> seconds.' +
+            'This form will reset automatically in <span id="countdown">10</span> seconds.' +
           '</p>' +
           '<button type="button" id="new-family-btn" class="btn btn--secondary">Register Another Family</button>' +
         '</div>' +
@@ -189,13 +205,21 @@
     return res.json();
   }
 
-  // ── Groups ─────────────────────────────────────────────────────────────
-  async function loadGroups() {
-    var filter = GROUP_IDS.map(function (id) { return "Group_ID=" + id; }).join(" or ");
-    var data = await mpGet(
-      "/tables/Groups?$select=Group_ID,Group_Name&$filter=" + encodeURIComponent(filter) + "&$orderby=Group_Name"
-    );
-    groups = data || [];
+  async function mpPut(path, records) {
+    var headers = { "Content-Type": "application/json" };
+    var token = getToken();
+    if (token) headers.Authorization = "Bearer " + token;
+    var res = await fetch(MP_API + path, {
+      method: "PUT",
+      headers: headers,
+      credentials: "include",
+      body: JSON.stringify(records)
+    });
+    if (!res.ok) {
+      var body = await res.text().catch(function () { return ""; });
+      throw new Error("PUT " + path + " \u2192 " + res.status + ": " + body);
+    }
+    return res.json();
   }
 
   // ── Location Name ─────────────────────────────────────────────────────
@@ -380,16 +404,31 @@
       : "+ Add Another Child";
   }
 
-  function onStep1Submit(e) {
+  async function onStep1Submit(e) {
     e.preventDefault();
     hideError("step1-error");
 
     parentData = {
-      firstName: document.getElementById("parent-first").value.trim(),
-      lastName:  document.getElementById("parent-last").value.trim(),
-      email:     document.getElementById("parent-email").value.trim(),
-      phone:     document.getElementById("parent-phone").value.trim()
+      firstName:    document.getElementById("parent-first").value.trim(),
+      lastName:     document.getElementById("parent-last").value.trim(),
+      email:        document.getElementById("parent-email").value.trim(),
+      phone:        document.getElementById("parent-phone").value.trim(),
+      addressLine1: document.getElementById("addr-line1").value.trim(),
+      addressLine2: document.getElementById("addr-line2").value.trim(),
+      city:         document.getElementById("addr-city").value.trim(),
+      state:        document.getElementById("addr-state").value,
+      zip:          document.getElementById("addr-zip").value.trim()
     };
+
+    // Validate required address fields (form uses novalidate)
+    if (!parentData.addressLine1 || !parentData.city || !parentData.state || !parentData.zip) {
+      showError("step1-error", "Please fill in all required address fields.");
+      return;
+    }
+    if (!/^\d{5}(-\d{4})?$/.test(parentData.zip)) {
+      showError("step1-error", "Please enter a valid 5-digit ZIP code.");
+      return;
+    }
 
     childrenData = [];
     document.querySelectorAll(".child-card").forEach(function (card) {
@@ -417,91 +456,28 @@
       });
     });
 
-    showStep(2);
-    renderGroupAssignment();
-  }
-
-  // ── Step 2: Volunteer Group Assignment ─────────────────────────────────
-  function setupStep2() {
-    document.getElementById("assign-form").addEventListener("submit", onStep2Submit);
-  }
-
-  function renderGroupAssignment() {
-    var container = document.getElementById("group-assignment-container");
-    container.innerHTML = "";
-
-    if (groups.length === 0) {
-      container.innerHTML = '<p class="loading-notice">Loading groups&#8230; please wait a moment.</p>';
-      var poll = setInterval(function () {
-        if (groups.length > 0) {
-          clearInterval(poll);
-          renderGroupAssignment();
-        }
-      }, 500);
-      return;
-    }
-
-    var optionsHtml = groups.map(function (g) {
-      return '<option value="' + g.Group_ID + '">' + escHtml(g.Group_Name) + '</option>';
-    }).join("");
-
-    childrenData.forEach(function (child, idx) {
-      var card = document.createElement("div");
-      card.className = "assignment-card";
-      card.innerHTML =
-        '<div class="assignment-info">' +
-          '<div class="assignment-name">' + escHtml(child.firstName) + " " + escHtml(child.lastName) + '</div>' +
-          '<div class="assignment-details">' +
-            'DOB: ' + formatDisplayDate(child.birthdate) + ' &bull; Age: ' + calculateAge(child.birthdate) +
-          '</div>' +
-        '</div>' +
-        '<div class="assignment-group">' +
-          '<label for="grp-' + idx + '" class="sr-only">Group for ' + escHtml(child.firstName) + ' ' + escHtml(child.lastName) + '</label>' +
-          '<select id="grp-' + idx + '" class="group-select" required>' +
-            '<option value="">\u2014 Select Group \u2014</option>' +
-            optionsHtml +
-          '</select>' +
-        '</div>';
-      container.appendChild(card);
-    });
-  }
-
-  async function onStep2Submit(e) {
-    e.preventDefault();
-    hideError("step2-error");
-
-    var assignments = childrenData.map(function (child, idx) {
-      return Object.assign({}, child, {
-        groupId: parseInt(document.getElementById("grp-" + idx).value, 10) || 0
-      });
-    });
-
-    if (assignments.some(function (a) { return !a.groupId; })) {
-      showError("step2-error", "Please assign a group to every child before continuing.");
-      return;
-    }
-
-    var btn = document.getElementById("assign-submit-btn");
-    btn.disabled    = true;
-    btn.textContent = "Saving\u2026";
+    var submitBtn = document.querySelector("#registration-form .btn--primary");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Saving\u2026";
 
     try {
-      await registerFamily(assignments);
-      showStep(3);
+      await registerFamily();
+      showStep(2);
       startCountdown();
     } catch (err) {
       console.error("[WalkinReg] Registration error:", err);
       showError(
-        "step2-error",
+        "step1-error",
         "Something went wrong saving the registration. Please try again or contact a staff member."
       );
-      btn.disabled    = false;
-      btn.textContent = "Complete Registration";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Family Information \u2192";
     }
   }
 
+
   // ── MP Registration (direct table API calls) ──────────────────────────
-  async function registerFamily(assignments) {
+  async function registerFamily() {
     var locId          = getLocationId();
     var congregationId = locId ? parseInt(locId, 10) : null;
     var parentContactId, householdId;
@@ -514,9 +490,25 @@
       parentContactId = existing.Contact_ID;
       householdId     = existing.Household_ID;
       console.log("[WalkinReg] Found existing contact:", parentContactId);
+
+      // Update address on existing household
+      try {
+        var addrResult = await mpPost("/tables/Addresses", [{
+          Address_Line_1: parentData.addressLine1,
+          Address_Line_2: parentData.addressLine2 || null,
+          City:           parentData.city,
+          "State/Region": parentData.state,
+          Postal_Code:    parentData.zip
+        }]);
+        await mpPut("/tables/Households", [{
+          Household_ID: householdId,
+          Address_ID:   addrResult[0].Address_ID
+        }]);
+      } catch (addrErr) {
+        console.warn("[WalkinReg] Could not update address for existing household:", addrErr);
+      }
     } else {
       // 2a. Create Household
-      console.log("[WalkinReg] Creating household with parentData:", JSON.stringify(parentData));
       var householdResult = await mpPost("/tables/Households", [{
         Household_Name:  parentData.lastName,
         Congregation_ID: congregationId,
@@ -524,7 +516,20 @@
       }]);
       householdId = householdResult[0].Household_ID;
 
-      // 2b. Create parent Contact
+      // 2b. Create Address and link to Household
+      var addrResult = await mpPost("/tables/Addresses", [{
+        Address_Line_1: parentData.addressLine1,
+        Address_Line_2: parentData.addressLine2 || null,
+        City:           parentData.city,
+        "State/Region": parentData.state,
+        Postal_Code:    parentData.zip
+      }]);
+      await mpPut("/tables/Households", [{
+        Household_ID: householdId,
+        Address_ID:   addrResult[0].Address_ID
+      }]);
+
+      // 2c. Create parent Contact
       var parentResult = await mpPost("/tables/Contacts", [{
         First_Name:            parentData.firstName,
         Last_Name:             parentData.lastName,
@@ -545,9 +550,9 @@
     ensureUserAccount(parentContactId, parentData.email, parentData.firstName, parentData.lastName)
       .catch(function (err) { console.warn("[WalkinReg] User account/email:", err); });
 
-    // 5. Create child Contacts, then assign each to their selected group
-    for (var i = 0; i < assignments.length; i++) {
-      var child = assignments[i];
+    // 5. Create child Contacts and Participant records
+    for (var i = 0; i < childrenData.length; i++) {
+      var child = childrenData[i];
 
       var childResult = await mpPost("/tables/Contacts", [{
         First_Name:            child.firstName,
@@ -561,17 +566,9 @@
       var childContactId = childResult[0].Contact_ID;
 
       // 6. Get or create Participant record for this child
-      var participantId = await ensureParticipant(childContactId);
+      await ensureParticipant(childContactId);
 
-      // 7. Add child to selected Kids Quest group
-      await mpPost("/tables/Group_Participants", [{
-        Group_ID:       child.groupId,
-        Participant_ID: participantId,
-        Group_Role_ID:  GROUP_ROLE_ID,
-        Start_Date:     todayISO()
-      }]);
-
-      // 8. Save selected attributes for this child
+      // 7. Save selected attributes for this child
       if (child.attributes && child.attributes.length > 0) {
         for (var a = 0; a < child.attributes.length; a++) {
           var attr = child.attributes[a];
@@ -652,7 +649,7 @@
       "<p>If you haven\u2019t set a password yet, use the \u201cForgot Password\u201d " +
       "link on the login page to create one.</p>" +
       "<p>Completing your profile helps us serve your family better \u2014 " +
-      "we\u2019d love to have your mailing address so we can keep you connected!</p>" +
+      "we look forward to connecting with you!</p>" +
       "<p>Blessings,<br />The Kids Quest Team</p>";
 
     // Send via MP /messages endpoint (triggers actual email delivery)
@@ -722,13 +719,13 @@
     return created[0].Participant_ID;
   }
 
-  // ── Step 3: Thank You ──────────────────────────────────────────────────
-  function setupStep3() {
+  // ── Confirmation ────────────────────────────────────────────────────────
+  function setupConfirmation() {
     document.getElementById("new-family-btn").addEventListener("click", resetWidget);
   }
 
   function startCountdown() {
-    var seconds = 30;
+    var seconds = 10;
     var el = document.getElementById("countdown");
     if (el) el.textContent = seconds;
 
@@ -757,18 +754,18 @@
     updateAddChildBtn();
     hideError("step1-error");
 
-    document.getElementById("group-assignment-container").innerHTML = "";
-    var assignBtn = document.getElementById("assign-submit-btn");
-    assignBtn.disabled    = false;
-    assignBtn.textContent = "Complete Registration";
-    hideError("step2-error");
+    var submitBtn = document.querySelector("#registration-form .btn--primary");
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Family Information \u2192";
+    }
 
     showStep(1);
   }
 
   // ── UI Helpers ─────────────────────────────────────────────────────────
   function showStep(n) {
-    ["step-1", "step-2", "step-3"].forEach(function (id, idx) {
+    ["step-1", "step-2"].forEach(function (id, idx) {
       var el = document.getElementById(id);
       if (el) el.hidden = (idx + 1 !== n);
     });
