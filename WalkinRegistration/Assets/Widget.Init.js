@@ -305,25 +305,18 @@
   // ── Location Name ─────────────────────────────────────────────────────
   async function loadLocationName() {
     var locId = getLocationId();
-    console.log("[WalkinReg] loadLocationName called, locationId =", locId);
     if (!locId) return;
 
     var data = await mpGet(
       "/tables/Congregations?$select=Congregation_ID,Congregation_Name&$filter=Congregation_ID=" + encodeURIComponent(locId)
     );
-    console.log("[WalkinReg] Congregations API response:", JSON.stringify(data));
 
     if (data && data.length > 0) {
       var el = document.getElementById("location-name");
       if (el) {
         el.textContent = data[0].Congregation_Name;
         el.hidden = false;
-        console.log("[WalkinReg] Location name set to:", data[0].Congregation_Name);
-      } else {
-        console.warn("[WalkinReg] #location-name element not found in DOM");
       }
-    } else {
-      console.warn("[WalkinReg] No congregation data returned for ID:", locId);
     }
   }
 
