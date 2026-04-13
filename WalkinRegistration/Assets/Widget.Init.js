@@ -60,6 +60,13 @@
     root.innerHTML = buildWidgetHtml();
 
     // Auth gate — a successful API call confirms the user is authenticated
+    authGate(root);
+  }
+
+  function authGate(root, attempt) {
+    var tries = attempt || 0;
+    var returningFromSSO = new URLSearchParams(window.location.search).has("mpCustomWidgetAuth");
+
     mpGet("/tables/Contacts?$select=Contact_ID&$top=1").then(function () {
       root.style.display = "";
       setupStep1();
@@ -68,6 +75,12 @@
         console.error("[WalkinReg] Failed to load location name:", err);
       });
     }).catch(function (err) {
+      // If returning from SSO, the token may still be initializing — retry
+      if (returningFromSSO && tries < 20) {
+        console.log("[WalkinReg] Waiting for auth token… (attempt " + (tries + 1) + ")");
+        setTimeout(function () { authGate(root, tries + 1); }, 500);
+        return;
+      }
       console.warn("[WalkinReg] Not authenticated — redirecting to login:", err);
       root.innerHTML = "";
       redirectToLogin();
