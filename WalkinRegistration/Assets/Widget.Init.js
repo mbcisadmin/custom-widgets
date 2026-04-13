@@ -307,14 +307,17 @@
     var locId = getLocationId();
     if (!locId) return;
 
-    var data = await mpGet(
-      "/tables/Congregations?$select=Congregation_ID,Congregation_Name&$filter=Congregation_ID=" + encodeURIComponent(locId)
+    var result = await mpPost(
+      "/procs/api_custom_WalkinReg_GetConfig",
+      { "@CongregationID": parseInt(locId, 10) }
     );
 
-    if (data && data.length > 0) {
+    // Proc results come back as an array of result sets
+    var rows = Array.isArray(result) ? result[0] : result;
+    if (rows && rows.length > 0) {
       var el = document.getElementById("location-name");
       if (el) {
-        el.textContent = data[0].Congregation_Name;
+        el.textContent = rows[0].Congregation_Name;
         el.hidden = false;
       }
     }
