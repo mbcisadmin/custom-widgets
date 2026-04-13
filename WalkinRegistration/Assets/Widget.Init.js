@@ -244,7 +244,7 @@
       headers: headers,
       credentials: "include"
     });
-    if (res.status === 401) { handleSessionExpired(); return; }
+    if (res.status === 401) { handleSessionExpired(); throw new Error("Session expired"); }
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("GET " + path + " \u2192 " + res.status + ": " + body);
@@ -263,7 +263,7 @@
       credentials: "include",
       body: JSON.stringify(records)
     });
-    if (res.status === 401) { handleSessionExpired(); return; }
+    if (res.status === 401) { handleSessionExpired(); throw new Error("Session expired"); }
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("POST " + path + " \u2192 " + res.status + ": " + body);
@@ -282,7 +282,7 @@
       credentials: "include",
       body: JSON.stringify(records)
     });
-    if (res.status === 401) { handleSessionExpired(); return; }
+    if (res.status === 401) { handleSessionExpired(); throw new Error("Session expired"); }
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("PUT " + path + " \u2192 " + res.status + ": " + body);
@@ -745,7 +745,7 @@
       credentials: "include",
       body: JSON.stringify(messagePayload)
     });
-    if (res.status === 401) { handleSessionExpired(); return; }
+    if (res.status === 401) { handleSessionExpired(); throw new Error("Session expired"); }
 
     if (res.ok) {
       // Patch dp_Communication_Messages to link Contact_ID so it shows on contact record
