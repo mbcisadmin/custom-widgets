@@ -367,6 +367,12 @@
     document.getElementById("lock-kiosk-btn").addEventListener("click", function () {
       localStorage.removeItem("mpp-widgets_AuthToken");
       clearRefreshData();
+
+      // Strip mpCustomWidgetAuth from URL so redirectToLogin doesn't skip
+      var url = new URL(window.location.href);
+      url.searchParams.delete("mpCustomWidgetAuth");
+      window.history.replaceState(null, "", url.toString());
+
       redirectToLogin();
     });
 
