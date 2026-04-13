@@ -194,14 +194,9 @@
     if (expiresIn) localStorage.setItem("mpp-widgets_TokenExpiry", String(Date.now() + expiresIn * 1000));
   }
 
-  function clearTokens() {
-    localStorage.removeItem("mpp-widgets_AuthToken");
+  function clearRefreshData() {
     localStorage.removeItem("mpp-widgets_RefreshToken");
     localStorage.removeItem("mpp-widgets_TokenExpiry");
-  }
-
-  function handleSessionExpired() {
-    clearTokens();
   }
 
   async function refreshAccessToken() {
@@ -229,7 +224,7 @@
   async function ensureValidToken() {
     if (getTokenExpiry() && Date.now() + TOKEN_REFRESH_BUFFER_MS >= getTokenExpiry()) {
       var refreshed = await refreshAccessToken();
-      if (!refreshed) handleSessionExpired();
+      if (!refreshed) clearRefreshData();
     }
   }
 
@@ -243,7 +238,6 @@
       headers: headers,
       credentials: "include"
     });
-    if (res.status === 401) { handleSessionExpired(); throw new Error("Session expired"); }
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("GET " + path + " \u2192 " + res.status + ": " + body);
@@ -262,7 +256,6 @@
       credentials: "include",
       body: JSON.stringify(records)
     });
-    if (res.status === 401) { handleSessionExpired(); throw new Error("Session expired"); }
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("POST " + path + " \u2192 " + res.status + ": " + body);
@@ -281,7 +274,6 @@
       credentials: "include",
       body: JSON.stringify(records)
     });
-    if (res.status === 401) { handleSessionExpired(); throw new Error("Session expired"); }
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("PUT " + path + " \u2192 " + res.status + ": " + body);
@@ -352,7 +344,8 @@
     addChildCard();
 
     document.getElementById("lock-kiosk-btn").addEventListener("click", function () {
-      clearTokens();
+      localStorage.removeItem("mpp-widgets_AuthToken");
+      clearRefreshData();
       window.location.reload();
     });
 
@@ -744,8 +737,6 @@
       credentials: "include",
       body: JSON.stringify(messagePayload)
     });
-    if (res.status === 401) { handleSessionExpired(); throw new Error("Session expired"); }
-
     if (res.ok) {
       // Patch dp_Communication_Messages to link Contact_ID so it shows on contact record
       try {
