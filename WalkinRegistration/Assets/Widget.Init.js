@@ -202,7 +202,6 @@
 
   function handleSessionExpired() {
     clearTokens();
-    window.location.reload(); // forceLogin.js will redirect to MP login
   }
 
   async function refreshAccessToken() {
