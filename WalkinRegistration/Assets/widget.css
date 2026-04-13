@@ -32,8 +32,28 @@
 
 /* ── Step Header ── */
 #walkin-widget .step-header {
+  position: relative;
   text-align: center;
   margin-bottom: 1.75rem;
+}
+
+#walkin-widget .btn-lock {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+#walkin-widget .btn-lock:hover {
+  background: #f1f5f9;
+  color: #334155;
 }
 
 #walkin-widget .location-name {

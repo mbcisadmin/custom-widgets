@@ -79,6 +79,7 @@
       '<!-- Step 1: Parent & Children Form -->' +
       '<section id="step-1" class="step">' +
         '<div class="step-header">' +
+          '<button type="button" id="lock-kiosk-btn" class="btn-lock" aria-label="Lock kiosk" title="Lock kiosk">\uD83D\uDD12 Lock</button>' +
           '<p id="location-name" class="location-name" hidden></p>' +
           '<h1>Kids Quest Walk-In Registration</h1>' +
           '<p class="step-subtitle">Please fill in your family\'s information below.</p>' +
@@ -168,12 +169,74 @@
     );
   }
 
-  // ── MP REST API Helpers ────────────────────────────────────────────────
+  // ── Token & Session Helpers ─────────────────────────────────────────────
+  const OAUTH_TOKEN_URL = MP_API + "/oauth/connect/token";
+  const CLIENT_ID       = "TM.Widgets";
+  const OAUTH_SCOPE     = "openid http://www.thinkministry.com/dataplatform/scopes/all";
+  const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // refresh 5 min before expiry
+
   function getToken() {
     return localStorage.getItem("mpp-widgets_AuthToken");
   }
 
+  function getRefreshToken() {
+    return localStorage.getItem("mpp-widgets_RefreshToken");
+  }
+
+  function getTokenExpiry() {
+    var v = localStorage.getItem("mpp-widgets_TokenExpiry");
+    return v ? parseInt(v, 10) : 0;
+  }
+
+  function storeTokenData(accessToken, refreshToken, expiresIn) {
+    if (accessToken) localStorage.setItem("mpp-widgets_AuthToken", accessToken);
+    if (refreshToken) localStorage.setItem("mpp-widgets_RefreshToken", refreshToken);
+    if (expiresIn) localStorage.setItem("mpp-widgets_TokenExpiry", String(Date.now() + expiresIn * 1000));
+  }
+
+  function clearTokens() {
+    localStorage.removeItem("mpp-widgets_AuthToken");
+    localStorage.removeItem("mpp-widgets_RefreshToken");
+    localStorage.removeItem("mpp-widgets_TokenExpiry");
+  }
+
+  function handleSessionExpired() {
+    clearTokens();
+    window.location.reload(); // forceLogin.js will redirect to MP login
+  }
+
+  async function refreshAccessToken() {
+    var rt = getRefreshToken();
+    if (!rt) return false;
+
+    try {
+      var res = await fetch(OAUTH_TOKEN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "grant_type=refresh_token"
+          + "&client_id=" + encodeURIComponent(CLIENT_ID)
+          + "&refresh_token=" + encodeURIComponent(rt)
+      });
+      if (!res.ok) return false;
+      var data = await res.json();
+      storeTokenData(data.access_token, data.refresh_token, data.expires_in);
+      return true;
+    } catch (e) {
+      console.warn("[WalkinReg] Token refresh failed:", e);
+      return false;
+    }
+  }
+
+  async function ensureValidToken() {
+    if (getTokenExpiry() && Date.now() + TOKEN_REFRESH_BUFFER_MS >= getTokenExpiry()) {
+      var refreshed = await refreshAccessToken();
+      if (!refreshed) handleSessionExpired();
+    }
+  }
+
+  // ── MP REST API Helpers ────────────────────────────────────────────────
   async function mpGet(path) {
+    await ensureValidToken();
     var headers = {};
     var token = getToken();
     if (token) headers.Authorization = "Bearer " + token;
@@ -181,6 +244,7 @@
       headers: headers,
       credentials: "include"
     });
+    if (res.status === 401) { handleSessionExpired(); return; }
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("GET " + path + " \u2192 " + res.status + ": " + body);
@@ -189,6 +253,7 @@
   }
 
   async function mpPost(path, records) {
+    await ensureValidToken();
     var headers = { "Content-Type": "application/json" };
     var token = getToken();
     if (token) headers.Authorization = "Bearer " + token;
@@ -198,6 +263,7 @@
       credentials: "include",
       body: JSON.stringify(records)
     });
+    if (res.status === 401) { handleSessionExpired(); return; }
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("POST " + path + " \u2192 " + res.status + ": " + body);
@@ -206,6 +272,7 @@
   }
 
   async function mpPut(path, records) {
+    await ensureValidToken();
     var headers = { "Content-Type": "application/json" };
     var token = getToken();
     if (token) headers.Authorization = "Bearer " + token;
@@ -215,6 +282,7 @@
       credentials: "include",
       body: JSON.stringify(records)
     });
+    if (res.status === 401) { handleSessionExpired(); return; }
     if (!res.ok) {
       var body = await res.text().catch(function () { return ""; });
       throw new Error("PUT " + path + " \u2192 " + res.status + ": " + body);
@@ -283,6 +351,11 @@
   // ── Step 1: Family Registration Form ──────────────────────────────────
   function setupStep1() {
     addChildCard();
+
+    document.getElementById("lock-kiosk-btn").addEventListener("click", function () {
+      clearTokens();
+      window.location.reload();
+    });
 
     document.getElementById("add-child-btn").addEventListener("click", function () {
       var count = document.querySelectorAll(".child-card").length;
@@ -653,6 +726,7 @@
       "<p>Blessings,<br />The Kids Quest Team</p>";
 
     // Send via MP /messages endpoint (triggers actual email delivery)
+    await ensureValidToken();
     var headers = { "Content-Type": "application/json" };
     var token = getToken();
     if (token) headers.Authorization = "Bearer " + token;
@@ -671,6 +745,7 @@
       credentials: "include",
       body: JSON.stringify(messagePayload)
     });
+    if (res.status === 401) { handleSessionExpired(); return; }
 
     if (res.ok) {
       // Patch dp_Communication_Messages to link Contact_ID so it shows on contact record
