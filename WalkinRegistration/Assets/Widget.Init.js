@@ -64,14 +64,13 @@
       root.style.display = "";
       setupStep1();
       setupConfirmation();
+      loadLocationName().catch(function (err) {
+        console.error("[WalkinReg] Failed to load location name:", err);
+      });
     }).catch(function (err) {
       console.warn("[WalkinReg] Not authenticated — redirecting to login:", err);
       root.innerHTML = "";
       redirectToLogin();
-    });
-
-    loadLocationName().catch(function (err) {
-      console.error("[WalkinReg] Failed to load location name:", err);
     });
   }
 
