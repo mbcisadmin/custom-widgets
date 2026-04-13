@@ -2,7 +2,8 @@
   "use strict";
 
   // ── Configuration ──────────────────────────────────────────────────────
-  const MP_API = "https://my.mcleanbible.org/ministryplatformapi";
+  const MP_API  = "https://my.mcleanbible.org/ministryplatformapi";
+  const MP_HOST = "my.mcleanbible.org";
 
   const MAX_CHILDREN = 10;
 
@@ -63,13 +64,13 @@
       root.style.display = "";
       setupStep1();
       setupConfirmation();
+      loadLocationName().catch(function (err) {
+        console.error("[WalkinReg] Failed to load location name:", err);
+      });
     }).catch(function (err) {
-      console.warn("[WalkinReg] Not authenticated:", err);
+      console.warn("[WalkinReg] Not authenticated — redirecting to login:", err);
       root.innerHTML = "";
-    });
-
-    loadLocationName().catch(function (err) {
-      console.error("[WalkinReg] Failed to load location name:", err);
+      redirectToLogin();
     });
   }
 
@@ -177,6 +178,26 @@
 
   function getToken() {
     return localStorage.getItem("mpp-widgets_AuthToken");
+  }
+
+  function redirectToLogin() {
+    // Skip redirect if returning from SSO (token may still be initializing)
+    if (new URLSearchParams(window.location.search).has("mpCustomWidgetAuth")) return;
+
+    var nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
+      function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+
+    var stateUrl = window.location.href;
+    stateUrl += (stateUrl.includes("?") ? "&" : "?") + "mpCustomWidgetAuth=true";
+
+    window.location.href =
+      "https://" + MP_HOST + "/ministryplatformapi/oauth/connect/authorize" +
+      "?response_type=code" +
+      "&scope=" + encodeURIComponent("openid http://www.thinkministry.com/dataplatform/scopes/all") +
+      "&client_id=" + encodeURIComponent(CLIENT_ID) +
+      "&redirect_uri=" + encodeURIComponent("https://" + MP_HOST + "/widgets/signin-oidc") +
+      "&nonce=" + nonce +
+      "&state=" + encodeURIComponent(stateUrl);
   }
 
   function getRefreshToken() {
@@ -346,7 +367,7 @@
     document.getElementById("lock-kiosk-btn").addEventListener("click", function () {
       localStorage.removeItem("mpp-widgets_AuthToken");
       clearRefreshData();
-      window.location.reload();
+      redirectToLogin();
     });
 
     document.getElementById("add-child-btn").addEventListener("click", function () {
