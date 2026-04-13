@@ -130,12 +130,6 @@
                 '<input type="text" id="addr-line1" required autocomplete="off" inputmode="text" placeholder="Street address" />' +
               '</div>' +
             '</div>' +
-            '<div class="form-row">' +
-              '<div class="form-field" style="grid-column: 1 / -1;">' +
-                '<label for="addr-line2">Address Line 2</label>' +
-                '<input type="text" id="addr-line2" autocomplete="off" inputmode="text" placeholder="Apt, suite, unit, etc. (optional)" />' +
-              '</div>' +
-            '</div>' +
             '<div class="form-row form-row--three">' +
               '<div class="form-field">' +
                 '<label for="addr-city">City <span class="required" aria-hidden="true">*</span></label>' +
@@ -531,7 +525,7 @@
       email:        document.getElementById("parent-email").value.trim(),
       phone:        document.getElementById("parent-phone").value.trim(),
       addressLine1: document.getElementById("addr-line1").value.trim(),
-      addressLine2: document.getElementById("addr-line2").value.trim(),
+      addressLine2: "",
       city:         document.getElementById("addr-city").value.trim(),
       state:        document.getElementById("addr-state").value,
       zip:          document.getElementById("addr-zip").value.trim()
