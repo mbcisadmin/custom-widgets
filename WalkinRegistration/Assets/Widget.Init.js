@@ -180,14 +180,19 @@
     return localStorage.getItem("mpp-widgets_AuthToken");
   }
 
-  function redirectToLogin() {
+  function redirectToLogin(options) {
+    var opts = options || {};
+
     // Skip redirect if returning from SSO (token may still be initializing)
-    if (new URLSearchParams(window.location.search).has("mpCustomWidgetAuth")) return;
+    if (!opts.force && new URLSearchParams(window.location.search).has("mpCustomWidgetAuth")) return;
 
     var nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
       function (b) { return b.toString(16).padStart(2, "0"); }).join("");
 
-    var stateUrl = window.location.href;
+    // Build state URL from the clean page URL (without mpCustomWidgetAuth)
+    var cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete("mpCustomWidgetAuth");
+    var stateUrl = cleanUrl.toString();
     stateUrl += (stateUrl.includes("?") ? "&" : "?") + "mpCustomWidgetAuth=true";
 
     window.location.href =
@@ -197,7 +202,8 @@
       "&client_id=" + encodeURIComponent(CLIENT_ID) +
       "&redirect_uri=" + encodeURIComponent("https://" + MP_HOST + "/widgets/signin-oidc") +
       "&nonce=" + nonce +
-      "&state=" + encodeURIComponent(stateUrl);
+      "&state=" + encodeURIComponent(stateUrl) +
+      (opts.forcePrompt ? "&prompt=login" : "");
   }
 
   function getRefreshToken() {
@@ -368,12 +374,18 @@
       localStorage.removeItem("mpp-widgets_AuthToken");
       clearRefreshData();
 
-      // Strip mpCustomWidgetAuth from URL so redirectToLogin doesn't skip
-      var url = new URL(window.location.href);
-      url.searchParams.delete("mpCustomWidgetAuth");
-      window.history.replaceState(null, "", url.toString());
-
-      redirectToLogin();
+      // Show locked screen, then redirect to SSO with forced login prompt
+      var root = document.getElementById("walkin-widget");
+      root.innerHTML =
+        '<div style="text-align:center;padding:4rem 2rem;">' +
+          '<div style="font-size:3rem;margin-bottom:1rem;">\uD83D\uDD12</div>' +
+          '<h1 style="font-size:1.8rem;font-weight:800;color:#0a2342;margin-bottom:0.5rem;">Kiosk Locked</h1>' +
+          '<p style="color:#555;margin-bottom:2rem;">This station is locked. Please log in to continue.</p>' +
+          '<button id="unlock-btn" class="btn btn--primary btn--large" style="max-width:320px;margin:0 auto;">Log In</button>' +
+        '</div>';
+      document.getElementById("unlock-btn").addEventListener("click", function () {
+        redirectToLogin({ force: true, forcePrompt: true });
+      });
     });
 
     document.getElementById("add-child-btn").addEventListener("click", function () {
