@@ -6,13 +6,13 @@
   const hostname = location.hostname;
   const isLocalDev =
     hostname.includes("localhost") || hostname.includes("127.0.0.1");
-  const isHostedApp = hostname.includes("https://mbcisadmin.github.io");
+  const isHostedApp = hostname.includes("mclean-bible-church.github.io");
 
   const templatePath = isLocalDev
     ? `/CustomWidgets/${widgetId.replace("Widget", "")}/Template/widget.html`
     : isHostedApp
     ? "/Template/widget.html"
-    : "https://mbcisadmin.github.io/custom-widgets/NewPerson/Template/widget.html";
+    : "https://mclean-bible-church.github.io/custom-widgets/NewPerson/Template/widget.html";
 
   const allowedKeys = [
     "@CongregationID",
