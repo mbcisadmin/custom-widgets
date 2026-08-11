@@ -1,0 +1,46 @@
+
+/*#searchForm > div:nth-child(2) {display: none;}
+#searchForm > div:nth-child(3) {display: none;}
+
+#advancedSearchSection {display: block !important;}
+
+
+#advancedSearchSection > div:nth-child(1) {display: none;}
+#advancedSearchSection > div:nth-child(3) {display: none;}
+#advancedSearchSection > div:nth-child(4) {display: none;}
+#advancedSearchSection > div:nth-child(5) {display: none;}
+#advancedSearchSection > div:nth-child(6) {display: none;}
+#advancedSearchSection > div:nth-child(7) {display: none;}
+#signUpTab {visibility: hidden;}
+*/
+
+/*.mpp-innerpage {
+    display: none;
+}
+.mpp-innerpage--contacts-wrapper {
+display: none;
+}
+.mpp-innerpage--special {
+	display: none;
+}
+h2#responseFormTitle {display: none !important;}
+#opportunityRespondDiv > div:nth-child(4) {display: none;}*/
+
+#formMessage {
+	appearance: none !important;
+	display: none !important;
+	}
+	
+#responseFormTitle {
+	appearance: none !important;
+	display: none !important;
+	}
+.mpp-innerpage--back {
+	appearance: none !important;
+	display: none !important;
+	}
+.mpp-innerpage--map-container {
+display: none;}
+
+/* Hide the date/"Ongoing" row on Opportunity Finder cards */
+h4.mpp-card--subtitle.opportunity-start-date {display: none;}
