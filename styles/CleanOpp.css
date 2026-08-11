@@ -44,3 +44,7 @@ display: none;}
 
 /* Hide the date/"Ongoing" row on Opportunity Finder cards */
 h4.mpp-card--subtitle.opportunity-start-date {display: none;}
+
+/* Hide the date/"Ongoing" row on the Opportunity detail page.
+   Detail view uses .mpp-innerpage--datetime, not the card classes above. */
+.mpp-innerpage--datetime {display: none !important;}
