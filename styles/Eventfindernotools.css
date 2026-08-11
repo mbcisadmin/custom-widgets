@@ -1,0 +1,15 @@
+/*
+#searchForm {
+	display: none;
+}
+*/
+div > div > div.mppw-form-wrapper {
+	display: none;
+}
+.mpp-card--subtitle.group-capacity {appearance: none !important;
+display: none !important;}
+
+/* Hide the date/"Ongoing" row on Opportunity Finder cards.
+   Finder cards use .mpp-card--subtitle.opportunity-start-date;
+   the detail view uses .mpp-innerpage--datetime instead (see CleanOpp.css). */
+h4.mpp-card--subtitle.opportunity-start-date {display: none !important;}

@@ -14,17 +14,41 @@ Served via GitHub Pages at:
 https://mclean-bible-church.github.io/custom-widgets/styles/<file>.css
 ```
 
-Reference it on the page that renders the widget:
+MP widgets render into a **shadow root**, so a page-level `<link>` cannot reach
+their internals. Attach the stylesheet with the widget's `customcss` attribute
+instead:
 
 ```html
-<link
-  rel="stylesheet"
-  href="https://mclean-bible-church.github.io/custom-widgets/styles/CGsearch.css" />
+<mpp-opportunity-details
+  customcss="https://mclean-bible-church.github.io/custom-widgets/styles/CleanOpp.css"
+  returnurl="/opportunity-finder">
+</mpp-opportunity-details>
 ```
+
+GitHub Pages serves these with `cache-control: max-age=600`, so after editing a
+file either wait ~10 minutes or bump a version on the attribute
+(`...CleanOpp.css?v=2`) to force browsers to pick up the change.
+
+## Finder cards vs. detail view
+
+The same visual element has different classes depending on the widget, so
+selectors are not interchangeable:
+
+| Element              | Finder cards (`*Finder.js`)                | Detail view (`*Details.js`)      |
+| -------------------- | ------------------------------------------ | -------------------------------- |
+| Opportunity date row | `.mpp-card--subtitle.opportunity-start-date` (`h4`) | `.mpp-innerpage--datetime` (`div` > `h2`) |
+| Event date row       | `.mpp-card--subtitle.event-date-range` (`h4`)        | `.mpp-innerpage--datetime`       |
+| Group date row       | `.mpp-card--subtitle.group-start-date` (`h4`)        | `.mpp-innerpage--datetime`       |
+
+Note that on the **event**, **group**, and **mission trip** detail views the
+`.mpp-innerpage--datetime` wrapper also contains the "Add to Calendar" button;
+hiding it there removes that button too. The opportunity detail view has no such
+button, so hiding it is safe.
 
 ## Files
 
 | File           | Used with                                                            |
 | -------------- | -------------------------------------------------------------------- |
 | `CGsearch.css` | Group search widget — hides unused search/advanced-search fields, forces the advanced search section open, and hides the sign-up tab. |
-| `CleanOpp.css` | Opportunity widget — hides the form message, response form title, innerpage back link, map container, and the date/"Ongoing" row on Opportunity Finder cards. (Also carries two commented-out blocks kept from the original file.) |
+| `CleanOpp.css` | `mpp-opportunity-details` — hides the form message, response form title, innerpage back link, map container, and the date/"Ongoing" row. (Also carries two commented-out blocks kept from the original file.) |
+| `Eventfindernotools.css` | `mpp-opportunity-finder` and `mpp-group-finder` — hides the search/filter form wrapper, the group capacity subtitle, and the date/"Ongoing" row on finder cards. Despite the name it is not used with the event finder. |
