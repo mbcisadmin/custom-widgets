@@ -60,6 +60,7 @@ WordPress.
 | `Eventfindernotoolslandscape.css` | `mpp-event-finder` | `/testing-widget/` | CustomFiles |
 | `EventDetails.css` | `mpp-event-details` | `/event-registration/` | CustomFiles |
 | `GroupDetails.css` | `mpp-group-details` | `/mp-community-details/`, `/mp-group-details/` | CustomFiles |
+| `PlanYourVisit.css` | `mpp-plan-your-visit` | `/arlington/plan-your-visit/` (testing) | not attached yet |
 | `Opptest.css` | `mpp-opportunity-details` | `/support-form/` | CustomFiles |
 | `PublicationWidgetNoText.css` | `mpp-subscribe-to-publication` | `/21days2025/`, `/21daysconfirmation/`, `/car-chats/`, `/globaloutreach/`, `/localoutreach/`, `/text-subscribe/` | CustomFiles |
 
@@ -82,6 +83,11 @@ WordPress.
 - **`Opptest.css`** — a more aggressive variant of `CleanOpp.css`: hides the
   whole `.mpp-innerpage`, contacts wrapper, special text, response form title,
   and map container.
+- **`PlanYourVisit.css`** — rewrites the step 1 copy: the `<h1>`, the intro
+  paragraph, and hides the "Let Us Know You're Coming" subheading. Written by
+  us, not copied from CustomFiles. The widget has no attributes for these
+  strings (they come from MP's i18n dictionary), so the original text is
+  blanked with `font-size: 0` and the replacement drawn with `::after`.
 - **`PublicationWidgetNoText.css`** — theming for the subscribe widget (brand
   button colors, square buttons, no box shadow) plus hiding the innerpage and
   left-aligning centered text.

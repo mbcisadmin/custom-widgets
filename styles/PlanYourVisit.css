@@ -1,0 +1,54 @@
+/* Plan Your Visit widget (mpp-plan-your-visit) — copy overrides.
+
+   The widget exposes no attributes for these strings: pageTitle,
+   verificationDescription and subHeaderText all come from MP's server-side
+   i18n dictionary. The rules below therefore blank the original text
+   (font-size: 0) and render the replacement through ::after, which keeps the
+   element in normal flow so long copy wraps correctly.
+
+   Step 1 (name/email + Send) markup, from PlanYourVisit.js:
+
+     <div class="mppw-form-wrapper">
+       <h1>{pageTitle}</h1>
+     </div>
+     <div class="mpp-form--container" id="formContainer">
+       <div id="verfificationContainer">          <- MP's typo, not ours
+         <div id="userHasVerificationContainer"></div>
+         <div class="mpp-innerpage"><p>{verificationDescription}</p></div>
+         <div class="mpp-innerpage"><h3>{subHeaderText}</h3></div>
+         ...
+
+   The paragraph rules are scoped to #verfificationContainer on purpose: step 2
+   (Visit Details) has its own .mpp-innerpage p and must not be rewritten.
+*/
+
+/* 1. "Plan Your Visit" -> welcome line */
+.mppw-form-wrapper h1 {
+	font-size: 0 !important;
+	/* em-based margins collapse to 0 at font-size 0, so restate in rem */
+	margin: 0 0 1.25rem !important;
+}
+.mppw-form-wrapper h1::after {
+	content: "We're so excited to welcome you to McLean Bible Church!";
+	display: block;
+	font-size: 2rem;
+	line-height: 1.2;
+}
+
+/* 2. Intro paragraph -> new copy. \A + pre-line gives the line break. */
+#verfificationContainer .mpp-innerpage p {
+	font-size: 0 !important;
+	margin: 0 0 1rem !important;
+}
+#verfificationContainer .mpp-innerpage p::after {
+	content: "Let's help your first Sunday go smoothly. If you'll be checking kids in to Kid's Quest or Access, this is the perfect place to start — just let us know you're coming.\A To get started, what's your name and email address?";
+	display: block;
+	font-size: 1rem;
+	line-height: 1.5;
+	white-space: pre-line;
+}
+
+/* 3. Hide the "Let Us Know You're Coming" subheading */
+#verfificationContainer .mpp-innerpage h3 {
+	display: none !important;
+}
