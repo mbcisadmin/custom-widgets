@@ -1,0 +1,26 @@
+/*
+#searchForm {
+	display: none;
+}
+*/
+
+:host {
+	--form-btn-primary-bgcolor: #00a0e3;
+	--form-btn-primary-hover: #fff;
+	--form-btn-secondary-text: #00a0e3;
+	--box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+}
+
+
+div > div > div.mpp-innerpage {
+	display: none;
+}
+.mppw-btn {border-radius: 0px;
+	border: 2px solid var(--form-btn-secondary-text)
+	}
+.mppw-btn:hover, 
+.mppw-btn:focus {color:#00a0e3;
+	
+}
+
+.mppw-centered {text-align: left;}

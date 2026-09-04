@@ -1,0 +1,9 @@
+
+
+
+/*Gets rid of Room Display on event details*/
+#detailsContainer > div:nth-child(3) {display: none;}
+
+
+
+

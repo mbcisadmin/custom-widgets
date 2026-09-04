@@ -1,0 +1,20 @@
+/*
+#searchForm {
+	display: none;
+}
+*/
+/*div > div > div.mpp-form--container {display: none;}*/
+/*div > div > div.mpp-innerpage--special {display: none;}*/
+/*#mpp-innerpage > div:nth-child(3) {display: none;}*/
+/*<div class="mpp-innerpage--special" id="*/
+.mpp-innerpage--capacity {
+	appearance: none !important;
+	display: none !important;
+	}
+	
+#signUpTab {
+	appearance: none !important;
+	display: none !important;
+	}
+
+<div class="mpp-form--tabs" id="formTabs"><label class="active" id="inquireTab"><input type="radio" name="formSelector" value="inquire">Contact This Group</label> <label class="" id="signUpTab"><input type="radio" name="formSelector" value="signup">Sign Up For This Group</label></div> 

@@ -1,0 +1,28 @@
+/*
+#searchForm {
+	display: none;
+}
+*/
+div > div > div.mppw-form-wrapper {
+	display: none;
+}
+:host {
+--card-boxShadow: 0;}
+
+/*@font-face {
+font-family: Gotham A;
+font-weight: normal;
+font-style: normal;    
+src: url(/css/MyCustomFont.ttf) format('truetype');
+}*/
+
+
+
+*{font-family: Montserrat, Gotham B, arial, sans-serif;}
+
+.mppw-component-container {font-family: serif;}
+.mppw-card--grid {grid-template-columns: 100%;}
+.mpp-card--header {align: left; display: none;}
+.mpp-card {background-color: #f2f2f2;
+border-radius: 0px;}
+.mppw-btn {background-color: #999999;}
